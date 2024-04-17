@@ -2,8 +2,9 @@ library(dplyr)
 library(tidyverse)
 library(data.table)
 library(RSocrata)
+library(snakecase)
 
-filename <- "stacked_logs_2024-04-09.rds"
+filename <- "stacked_logs_2024-04-15.rds"
 
 logs <- readRDS(filename)
 
