@@ -2,8 +2,9 @@ library(dplyr)
 library(tidyverse)
 library(data.table)
 library(RSocrata)
+library(snakecase)
 
-filename <- "stacked_logs_2024-04-09.rds"
+filename <- "stacked_logs_2024-04-15.rds"
 
 logs <- readRDS(filename)
 
@@ -93,7 +94,7 @@ unique(logs$logger_model)
 logs <- logs %>% mutate(logger_model = to_snake_case(logger_model))
 unique(logs$logger_model)
 # acceptable values are (case-sensitive): HOBO Pro V2, HOBO DO, HOBO Level Logger,
-# TidBit MX 2203, aquaMeasure SAL, aquaMeasure CHL, aquaMeasure DOT, aquaMeasure SST
+# TidbiT MX 2203, aquaMeasure SAL, aquaMeasure CHL, aquaMeasure DOT, aquaMeasure SST
 # aquaMeasure TURB, VR2AR, VR2ARX, DST Comp
 # References: 
 #https://www.innovasea.com/aquaculture-intelligence/environmental-monitoring/wireless-sensors/
