@@ -37,6 +37,12 @@ print(lease_crosscheck)
 # 5005 and 5007 acceptable because they are experimental leases that were then
 # discontinued
 
+# Checking for duplicate leases 
+# Get distinct station-lease pairs
+unique_stations <- logs %>% 
+  select(location_description, lease) %>% 
+  distinct()
+
 # status -----------------------------------------------------------------------
 # standardize status values
 unique(logs$status)
@@ -156,7 +162,13 @@ unique(logs$serial)
 missing_serial_num <- logs %>% filter(is.na(serial))
 # TODO: Replace missing serial numbers with -111
 # Nicole looked into these for sensor inventory 
-# TODO: Look at log with sensor serial number 207?
+# Note - serial numbers 3 characters long are DST comp sensors
+unique(logs$serial)
+short_serial_nums <- logs %>%
+  filter(str_length(serial) < 4)
+
+serial_num_len <- unlist(lapply(logs$serial, str_length))
+max(serial_num_len, na.rm=TRUE)
 
 # sensor_depth -----------------------------------------------------------------
 unique(logs$sensor_depth)
@@ -238,7 +250,11 @@ depl_att_vals <- count(logs %>% filter(!is.na(deployment_attendant)))
 depl_att_nas <- count(logs %>% filter(is.na(deployment_attendant)))
 message(glue("Deployment Attendant Values: {depl_att_vals}"))
 message(glue("Deployment Attendant NAs: {depl_att_nas}"))
-# TODO: consider how to fill in missing deployment attendant values?
+
+unique(logs$deployment_attendant)
+depl_attendant_text_len <- unlist(lapply(logs$deployment_attendant, str_length))
+max(depl_attendant_text_len, na.rm=TRUE)
+
 
 # retrieval_attendant ----------------------------------------------------------
 unique(logs$retrieval_attendant)
@@ -397,7 +413,11 @@ unique(logs$photos_taken)
 
 # anchor_type ------------------------------------------------------------------
 unique(logs$anchor_type)
-# TODO: pull out values from here to 
+logs <- logs %>%
+  mutate(anchor_type = tolower(anchor_type))
+unique(logs$anchor_type)
+anchor_type_text_len <- unlist(lapply(logs$anchor_type, str_length))
+max(anchor_type_text_len, na.rm=TRUE)
 
 # float_type -------------------------------------------------------------------
 unique(logs$float_type)
