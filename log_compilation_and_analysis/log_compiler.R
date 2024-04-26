@@ -2,6 +2,7 @@ library(dplyr)
 library(tidyverse)
 library(data.table)
 library(readxl)
+library(here)
 library(glue)
 library(fs)
 library(purrr)
@@ -9,21 +10,7 @@ library(janitor)
 library(snakecase)
 
 all_station_folder_path <- "R:/data_branches/water_quality/station_folders"
-# use a subsection of station folders for testing 
-#(execution time is currently VERY long)
-#expected_log_name_file <- "C:/Users/Rachel Woodside/OneDrive - Perennia/GitHub Repos/log_compiler/expected_log_names.xlsx"
-#all_station_folder_path <- "C:/Users/Rachel Woodside/OneDrive - Perennia/GitHub Repos/log_compiler/fake_station_folders"
-
 rel_all_station_folder_path <- path_rel(all_station_folder_path)
-
-# Define regex to identify csv and excel files contained in log folders
-#csv_log_file_regex <- regex("log\\/[a-z0-9_ \\-]+\\.csv$",
-                        #ignore_case=TRUE)
-
-#excel_log_file_regex <- regex("log\\/[a-z0-9_ \\-]+\\.xlsx?$",
-                            #ignore_case=TRUE)
-
-#expected_log_name_df <- read_excel(expected_log_name_file, na="NA")
 
 # Recurse to find all log folders
 log_folder_list <- dir_ls(all_station_folder_path,
@@ -40,9 +27,14 @@ xlsx_log_file_list <- compact(lapply(log_folder_list, dir_ls, glob="*.xlsx"))
 excel_log_file_list <- c(xls_log_file_list, xlsx_log_file_list)
 
 # Filter temp files out
-csv_log_file_list <- compact(map(csv_log_file_list, ~ discard(.x, .p = str_detect(.x, "~"))))
-excel_log_file_list <- compact(map(excel_log_file_list, ~ discard(.x, .p = str_detect(.x, "~"))))
+csv_log_file_list <- compact(map(
+  csv_log_file_list, ~ discard(.x, .p = str_detect(.x, "~"))))
+excel_log_file_list <- compact(map(
+  excel_log_file_list, ~ discard(.x, .p = str_detect(.x, "~"))))
 
+# TODO? Filter out deployments from a list of deployments to ignore?
+# e.g. do we want ferry data in here? do we want data from log files in folders
+# that say "do not use"?
 
 # Read the log files into a list of data frames
 csv_log_dfs <- lapply(csv_log_file_list, 
@@ -117,9 +109,6 @@ std_df_comparison <- compare_df_cols(all_log_dfs_std)
 # https://www.r-bloggers.com/2023/07/efficiently-finding-duplicate-rows-in-r-a-comparative-analysis/#:~:text=The%20simplest%20approach%20to%20finding%20duplicate%20rows%20is,our%20data%20frame%20df.%20duplicated_rows_base%20%3C-%20duplicated%20%28df%29
 
 # TODO? Check that the number of deployments matches the expected number?
-# TODO? Crosscheck deployments against list of deployments to ignore?
-# e.g. do we want ferry data in here? do we want data from log files in folders
-# that say "do not use"?
 
 # Combine all the data frames into a single data frame
 stacked_logs_df <- bind_rows(all_log_dfs_std)

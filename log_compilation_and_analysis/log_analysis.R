@@ -3,8 +3,10 @@ library(tidyverse)
 library(data.table)
 library(RSocrata)
 library(snakecase)
+library(here)
+library(glue)
 
-filename <- "stacked_logs_2024-04-15.rds"
+filename <- glue("{here()}/stacked_logs_2024-04-15.rds")
 
 logs <- readRDS(filename)
 
@@ -91,7 +93,8 @@ missing_latitude <- logs %>% filter(is.na(logger_latitude))
 
 # logger_longitude -------------------------------------------------------------
 unique(logs$logger_longitude)
-nonnegative_or_missing_longitude <- logs %>% filter(is.na(logger_longitude)|logger_longitude > 0)
+nonnegative_or_missing_longitude <- logs %>% 
+  filter(is.na(logger_longitude)|logger_longitude > 0)
 
 # logger_model -----------------------------------------------------------------
 unique(logs$logger_model)
@@ -238,11 +241,9 @@ logs <- logs %>%
   mutate(acoustic_release = tolower(str_sub(acoustic_release, 1, 1)))
 unique(logs$acoustic_release)
 logs %>% filter(is.na(acoustic_release))
-# TODO: fill in values for acoustic_release based on mount_type or configuration?
 
 # surface_buoy -----------------------------------------------------------------
 unique(logs$surface_buoy)
-# TODO: fill in values for surface_buoy based on mount_type or configuration? no
 
 # deployment_attendant ---------------------------------------------------------
 unique(logs$deployment_attendant)
