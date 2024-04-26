@@ -1,21 +1,43 @@
+# Should we start a CMAR header standard?
+# Date, Name, 1 - 2 sentences about what the script does?
+# also nice to nice consecutive scripts with 1_, 2_, etc
+# filter function in view()
+# should we take DST comp out?? Probably not, but what is this?
+
 library(dplyr)
-library(tidyverse)
+library(tidyverse) # not usually recommended to load the WHOLE tidyverse; better off 
+# only loading the individual packages you actually need
+# https://forum.posit.co/t/teaching-install-load-packages-individually-or-use-tidyverse-package/71
 library(data.table)
-library(RSocrata)
+library(RSocrata) # this could be useful for Open Data Portal too!
 library(snakecase)
 library(here)
 library(glue)
+# need this package for read_excel
+library(readxl)
 
-filename <- glue("{here()}/stacked_logs_2024-04-15.rds")
+
+#filename <- glue("{here()}/stacked_logs_2024-04-15.rds")
+filename <- here("stacked_logs_2024-04-15.rds")
 
 logs <- readRDS(filename)
 
-col_list <- colnames(logs)
+arbcol_list <- colnames(logs)
 
 # deployment_waterbody ---------------------------------------------------------
 unique(logs$deployment_waterbody)
 # check for rows missing waterbody values
 missing_waterbody <- logs %>% filter(is.na(deployment_waterbody))
+
+# another way to check for NAs in a column (almost 200 x faster)
+any(is.na(logs$deployment_waterbody))
+
+# library(microbenchmark)
+# microbenchmark(
+#   missing_waterbody1 <- logs %>% filter(is.na(deployment_waterbody)),
+#   missing_waterbody2 <- any(is.na(logs$deployment_waterbody))
+# )
+
 
 # location_description ---------------------------------------------------------
 unique(logs$location_description)
@@ -29,11 +51,13 @@ unique(logs$lease)
 # TODO: prepend zeroes where appropriate for both log list and ODP list
 # no need to check for missing values - lease values are optional
 # Check if lease values are valid
+
+# omg I didn't realize reading from an api was so straightforward!
 odp_lease_api_url <- "https://data.novascotia.ca/resource/h57h-p9mm.csv"
 odp_lease_data <- read.socrata(odp_lease_api_url)
 odp_lease_list <- as.character(odp_lease_data$license_le)
 
-lease_crosscheck <- setdiff(logs$lease, odp_lease_list)
+lease_crosscheck <- setdiff(logs$lease, odp_lease_list) # what package is this from?
 print(odp_lease_list)
 print(lease_crosscheck)
 # 5005 and 5007 acceptable because they are experimental leases that were then
@@ -41,9 +65,13 @@ print(lease_crosscheck)
 
 # Checking for duplicate leases 
 # Get distinct station-lease pairs
+# unique_stations <- logs %>% 
+#   select(location_description, lease) %>% 
+#   distinct()
+
+# can also do
 unique_stations <- logs %>% 
-  select(location_description, lease) %>% 
-  distinct()
+  distinct(location_description, lease)
 
 # status -----------------------------------------------------------------------
 # standardize status values
@@ -59,7 +87,7 @@ logs <- logs %>%
                             status == "retrived" ~ "retrieved",
                             status == "retreived" ~ "retrieved",
                             .default = status))
-unique(logs$status)
+unique(logs$status) # nice!
 
 missing_status <- logs %>% filter(is.na(status))
 
@@ -85,7 +113,10 @@ deployed_but_have_retrieval_date <- retrieved %>% filter(status == "deployed")
 # nothing to do here I don't think, will be calculated by DB
 # quick check for unique values here, just to see if there's anything
 # that doesn't belong in this column, as was found elsewhere
-unique(logs$duration)
+
+# can be helpful to sort() with unique -- although it removes NAs by default
+
+sort(unique(logs$duration), na.last = FALSE)
 
 # logger_latitude --------------------------------------------------------------
 unique(logs$logger_latitude)
@@ -109,6 +140,21 @@ unique(logs$logger_model)
 #https://www.innovasea.com/aquaculture-intelligence/environmental-monitoring/wireless-sensors/
 #https://www.onsetcomp.com/products?f%5B0%5D=environment%3A346&f%5B1%5D=product_type%3A931&f%5B2%5D=product_type%3A936
 #https://www.innovasea.com/fish-tracking/products/acoustic-receivers/
+
+
+# can use the match operator %in% when more than one equality condition:
+# logger_model %in%
+#   c("tidbit_mx_2303",
+#     "tidbit_mx_2203",
+#     "tidbi_t_mx_2203",
+#     "tidbi_t_mx_2303") ~  "TidbiT MX 2203"
+
+# or even 
+
+# tidbits <- c("tidbit_mx_2303", "tidbit_mx_2203", "tidbi_t_mx_2203", "tidbi_t_mx_2303") 
+#
+# logger_model %in% tidbits ~  "TidbiT MX 2203"
+
 logs <- logs %>% 
   mutate(logger_model = case_when(logger_model == "hobo_pro_v_2" |
                                     logger_model == "hobo_v_2" ~ 
@@ -154,6 +200,7 @@ unique(logs$logger_model)
 mystery_and_missing_logger_models <- logs %>% 
   filter(
     is.na(logger_model)|
+    # can use %in% here too
     logger_model == "hobo"| 
     logger_model == "hobo_temp_v_2"|
     logger_model == "hobo_tidbit"|
@@ -166,15 +213,15 @@ missing_serial_num <- logs %>% filter(is.na(serial))
 # TODO: Replace missing serial numbers with -111
 # Nicole looked into these for sensor inventory 
 # Note - serial numbers 3 characters long are DST comp sensors
-unique(logs$serial)
+sort(unique(logs$serial), na.last = FALSE)
 short_serial_nums <- logs %>%
   filter(str_length(serial) < 4)
 
 serial_num_len <- unlist(lapply(logs$serial, str_length))
-max(serial_num_len, na.rm=TRUE)
+max(serial_num_len, na.rm=TRUE) # smart to check this
 
 # sensor_depth -----------------------------------------------------------------
-unique(logs$sensor_depth)
+sort(unique(logs$sensor_depth), na.last = FALSE)
 missing_sensor_depth <- logs %>% filter(is.na(sensor_depth))
 # super problem row I found with nothing but height of VR2AR off bottom
 # anchor type, and float type
@@ -221,18 +268,23 @@ unique(logs$configuration)
 # TODO: fill in NAs based on configuration table file (and CB config table file)?
 config_table_file_path <- "R:/tracking_sheets/water_quality_configuration_table.xlsx"
 cb_config_table_file_path <- "R:/tracking_sheets/water_quality_cape_breton_configuration.xlsx"
-config_table_data <- read_excel(config_table_file_path, 
-                                na = c("", "n/a", "N/A", "NA")) %>% 
+config_table_data <- read_excel(
+  config_table_file_path, 
+  na = c("", "n/a", "N/A", "NA")
+) %>% 
   select(Station_Name, Depl_Date, Configuration) %>%
-  rename("location_description" = Station_Name,
-         "deployment" = Depl_Date,
-         "configuration_from_table" = Configuration)
+  rename(
+    "location_description" = Station_Name,
+    "deployment" = Depl_Date,
+    "configuration_from_table" = Configuration)
 
 cb_config_table_data <- read_excel(cb_config_table_file_path, 
                                    na = c("", "n/a", "N/A", "NA"))
 
-config_table_join_data <- inner_join(logs, config_table_data, 
-             by=c("location_description", "deployment"))
+# what is this doing?
+config_table_join_data <- inner_join(
+  logs, config_table_data, by = c("location_description", "deployment")
+)
 config_nas <- logs %>% filter(is.na(configuration))
 
 # acoustic_release -------------------------------------------------------------
@@ -242,10 +294,19 @@ logs <- logs %>%
 unique(logs$acoustic_release)
 logs %>% filter(is.na(acoustic_release))
 
+
+
+# DD stopped around here ---------------------------------------------------
+
+
+
 # surface_buoy -----------------------------------------------------------------
 unique(logs$surface_buoy)
 
 # deployment_attendant ---------------------------------------------------------
+
+# did any of these names get changed?
+
 unique(logs$deployment_attendant)
 depl_att_vals <- count(logs %>% filter(!is.na(deployment_attendant)))
 depl_att_nas <- count(logs %>% filter(is.na(deployment_attendant)))

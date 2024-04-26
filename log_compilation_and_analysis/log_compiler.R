@@ -10,6 +10,7 @@ library(janitor)
 library(snakecase)
 
 all_station_folder_path <- "R:/data_branches/water_quality/station_folders"
+# what does this do?
 rel_all_station_folder_path <- path_rel(all_station_folder_path)
 
 # Recurse to find all log folders
