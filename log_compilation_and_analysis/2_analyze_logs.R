@@ -255,30 +255,27 @@ sort_unique_vals(logs$configuration)
 #       .default = configuration
 #     )
 #   )
-# TODO: Pull in code from data migration to fill in NAs based on configuration 
-# table and Cape Breton configuration table
-# TODO: Also confirm that appropriate join is being used
-config_table_file_path <-
-  "R:/tracking_sheets/water_quality_configuration_table.xlsx"
-cb_config_table_file_path <-
-  "R:/tracking_sheets/water_quality_cape_breton_configuration.xlsx"
-config_table_data <- read_excel(
-  config_table_file_path, 
-  na = c("", "n/a", "N/A", "NA")
-) %>% 
+
+# Fill in NAs based on configuration table file (and CB config table file)?
+config_table_file_path <- "R:/tracking_sheets/water_quality_configuration_table.xlsx"
+cb_config_table_file_path <- "R:/tracking_sheets/water_quality_cape_breton_configuration.xlsx"
+
+config_table_data <- read_excel(config_table_file_path, 
+                                na = c("", "n/a", "N/A", "NA")) %>% 
   select(Station_Name, Depl_Date, Configuration) %>%
-  rename(
-    "location_description" = Station_Name,
-    "deployment" = Depl_Date,
-    "configuration_from_table" = Configuration)
+  rename("location_description" = Station_Name,
+         "deployment" = Depl_Date,
+         "configuration" = Configuration) %>%
+  mutate(deployment = ymd(deployment))
 
 cb_config_table_data <- read_excel(cb_config_table_file_path, 
                                    na = c("", "n/a", "N/A", "NA"))
+# TODO: Also confirm that appropriate join is being used
+config_table_join_data <- left_join(logs, config_table_data, 
+                                    by=c("location_description", "deployment"))
+config_table_merge_data <- merge(logs, config_table_data, all.x=T, all.y=F)
 
-# what is this doing?
-config_table_join_data <- inner_join(
-  logs, config_table_data, by = c("location_description", "deployment")
-)
+unique(config_table_join_data$`15`)
 config_nas <- logs %>% filter(is.na(configuration))
 
 # acoustic_release -------------------------------------------------------------
