@@ -9,6 +9,8 @@ library(snakecase)
 library(here)
 library(glue)
 library(readxl)
+library(stringr)
+library(purrr)
 
 # Helper functions -------------------------------------------------------------
 prepend_lease_zeroes <- function(lease_num) {
@@ -64,12 +66,12 @@ odp_lease_data$license_le <-
 # TODO: add split on "/" character (or others?) for checking multi-lease stations
 lease_crosscheck <- setdiff(logs$lease, odp_lease_data$license_le)
 print(lease_crosscheck)
-# 5005 and 5007 acceptable because they are experimental leases that were then
-# discontinued
+# The ODP Lease List does not seem to include historical or experimental leases
+# Please check against other sources to confirm whether leases are valid
+# For example: https://novascotia.ca/fish/aquaculture/site-mapping-tool/
 
-logs %>% filter(lease == "0967")
-# TODO: Check if the 0967 lease at Camerons Cove was experimental? historical?
-# no need to check for missing values - lease values are optional
+# 5005 and 5007 were experimental leases 
+# 0967 was a historical lease
 
 # Checking for leases paired with multiple stations and vice versa
 unique_stations <- logs %>% 
@@ -78,7 +80,7 @@ unique_stations <- logs %>%
 # status -----------------------------------------------------------------------
 # standardize status values
 logs <- logs %>% mutate(status = tolower(status))
-sort_unique_vlas(logs$status)
+sort_unique_vals(logs$status)
 # acceptable values are: retrieved, lost, deployed
 logs <- logs %>% 
   mutate(status = case_when(status == "missing" ~ "lost",
@@ -154,11 +156,26 @@ sort_unique_vals(logs$logger_model)
 #https://www.innovasea.com/fish-tracking/products/acoustic-receivers/
 
 # Define alternative naming groups
-hobo_pro_v2_synonyms <- c("hobo_pro_v_2", "hobo_v_2", "hobo_temp_v_2", "hobo_v_2", "hobo_temp_u_22")
+hobo_pro_v2_synonyms <-
+  c("hobo_pro_v_2",
+    "hobo_v_2",
+    "hobo_temp_v_2",
+    "hobo_v_2",
+    "hobo_temp_u_22")
 hobo_do_synonyms <- c("hobo_do")
 hobo_level_logger_synonyms <- c("hobo_level_logger")
-tidbit_mx_2203_synonyms <- c("tidbit_mx_2303", "tidbit_mx_2203", "tidbi_t_mx_2203", "tidbi_t_mx_2303")
-aquameasure_sal_synonyms <- c("aquameasure_sal", "aqua_measure_sal", "aqua_measure_salinity", "aquameasure_salinity")
+tidbit_mx_2203_synonyms <-
+  c("tidbit_mx_2303",
+    "tidbit_mx_2203",
+    "tidbi_t_mx_2203",
+    "tidbi_t_mx_2303")
+aquameasure_sal_synonyms <-
+  c(
+    "aquameasure_sal",
+    "aqua_measure_sal",
+    "aqua_measure_salinity",
+    "aquameasure_salinity"
+  )
 aquameasure_chl_synonyms <- c("aquameasure_chl", "aqua_measure_chl")
 aquameasure_dot_synonyms <- c("aquameasure_dot", "aqua_measure_dot")
 aquameasure_sst_synonyms <- c("aquameasure_sst", "aqua_measure_sst")
@@ -188,7 +205,7 @@ logs <-
 sort_unique_vals(logs$logger_model)
 
 # investigate mystery logger models and missing logger models
-sort_unique_vals(logs$logger_model)
+#sort_unique_vals(logs$logger_model)
 # Edit the list below if coming across an unfamiliar logger model:
 # mystery_logger_models <- c("hobo")
 # identify rows with missing or unusual logger_models
@@ -213,18 +230,15 @@ max(serial_num_len, na.rm=TRUE) # smart to check this
 
 # sensor_depth -----------------------------------------------------------------
 sort_unique_vals(logs$sensor_depth)
-missing_sensor_depth <- logs %>% filter(is.na(sensor_depth))
-# super problem row I found with nothing but height of VR2AR off bottom
-# anchor type, and float type
-# try to find which rows have same values so I can tell which depl it belongs to
-#problem_row_matches <- logs %>% filter(anchor_type == "7 rotors" &
-#                          height_of_vr_2_ar_base_off_bottom == 1.5 &
-#                          float_type == "vinyl")
+# check for rows missing sensor depth
+any(is.na(logs$sensor_depth))
+# identify rows with missing serial numbers
+# missing_sensor_depth <- logs %>% filter(is.na(sensor_depth))
 
 # sounding ---------------------------------------------------------------------
 sort_unique_vals(logs$sounding)
 # found a sounding value of 670363 to investigate
-#l ogs %>% filter(sounding == 670363)
+# logs %>% filter(sounding == 670363)
 
 # datum ------------------------------------------------------------------------
 sort_unique_vals(logs$datum)
@@ -256,31 +270,63 @@ sort_unique_vals(logs$configuration)
 #     )
 #   )
 
-# Fill in NAs based on configuration table file (and CB config table file)?
-config_table_file_path <- "R:/tracking_sheets/water_quality_configuration_table.xlsx"
-cb_config_table_file_path <- "R:/tracking_sheets/water_quality_cape_breton_configuration.xlsx"
+logs <- logs %>% rename("log_configuration" = configuration)
 
-config_table_data <- read_excel(config_table_file_path, 
-                                na = c("", "n/a", "N/A", "NA")) %>% 
-  select(Station_Name, Depl_Date, Configuration) %>%
-  rename("location_description" = Station_Name,
-         "deployment" = Depl_Date,
-         "configuration" = Configuration) %>%
+# Fill in NAs based on configuration table file (and CB config table file)?
+config_table_file_path <-
+  "R:/tracking_sheets/water_quality_configuration_table.xlsx"
+cb_config_table_file_path <-
+  "R:/tracking_sheets/water_quality_cape_breton_configuration.xlsx"
+
+config_table_data <-
+  read_excel(config_table_file_path, na = c("", "n/a", "N/A", "NA")) %>% 
+  select(Station_Name, Depl_Date, Configuration) %>% 
+  rename(
+    "location_description" = Station_Name,
+    "deployment" = Depl_Date,
+    "table_configuration" = Configuration
+  ) %>% 
   mutate(deployment = ymd(deployment))
 
-cb_config_table_data <- read_excel(cb_config_table_file_path, 
-                                   na = c("", "n/a", "N/A", "NA"))
-# TODO: Also confirm that appropriate join is being used
-config_table_join_data <- left_join(logs, config_table_data, 
-                                    by=c("location_description", "deployment"))
-config_table_merge_data <- merge(logs, config_table_data, all.x=T, all.y=F)
+config_table_join_data <-
+  left_join(logs,
+            config_table_data,
+            by = c("location_description", "deployment"))
 
-unique(config_table_join_data$`15`)
-config_nas <- logs %>% filter(is.na(configuration))
+cb_config_table_data <-
+  read_excel(cb_config_table_file_path, na = c("", "n/a", "N/A", "NA")) %>% 
+  select(Station_Name, Depl_Date, Configuration) %>% 
+  rename(
+    "location_description" = Station_Name,
+    "deployment" = Depl_Date,
+    "cb_table_configuration" = Configuration
+  ) %>% 
+  mutate(deployment = ymd(deployment))
+
+config_table_join_data <- 
+  left_join(config_table_join_data,
+            cb_config_table_data,
+            by = c("location_description", "deployment"))
+
+colnames(config_table_join_data)
+
+# Check if any configuration data is not filled by the logs or the config table
+missing_any_config <- config_table_join_data %>% 
+  filter(is.na(config_table_join_data$log_configuration) & 
+           is.na(config_table_join_data$table_configuration) & 
+           is.na(config_table_join_data$cb_table_configuration)) %>%
+  select(location_description, deployment, log_configuration, table_configuration, cb_table_configuration)
+# TODO: Review log entries with no configuration data
+
+# TODO: Consider using right join to check for entries in the config table
+# that are missing from the logs
+
+# TODO: Merge configuration data into a single column
 
 # acoustic_release -------------------------------------------------------------
 sort_unique_vals(logs$acoustic_release)
-logs <- logs %>% mutate(acoustic_release = tolower(str_sub(acoustic_release, 1, 1)))
+logs <-
+  logs %>% mutate(acoustic_release = tolower(str_sub(acoustic_release, 1, 1)))
 sort_unique_vals(logs$acoustic_release)
 # check for rows missing acoustic_release values
 any(is.na(logs$acoustic_release))
@@ -306,7 +352,6 @@ sort_unique_vals(logs$deployment_attendant)
 depl_attendant_text_len <- unlist(lapply(logs$deployment_attendant, str_length))
 max(depl_attendant_text_len, na.rm=TRUE)
 
-
 # retrieval_attendant ----------------------------------------------------------
 # TODO: Clean up and standardize retrieval attendant names
 sort_unique_vals(logs$retrieval_attendant)
@@ -318,6 +363,79 @@ retrieval_att_nas <-
   count(logs %>% filter(is.na(retrieval_attendant)))
 message(glue("Retrieval Attendant Values: {retrieval_att_vals}"))
 message(glue("Retrieval Attendant NAs: {retrieval_att_nas}"))
+
+
+# Examine all attendant values
+all_attendant_vals <- sort(unique(c(logs$deployment_attendant, logs$retrieval_attendant)))
+all_attendant_vals <- all_attendant_vals %>% lapply(str_split_1, pattern=",|&|/|(and)") %>% unlist %>% trimws %>% sort_unique_vals
+all_attendant_vals
+
+albert_spears_alternatives <- c("Albert")
+
+
+identified_individual_attendants <-
+  c(
+    "Albert Spears", # need to add last name
+    "Aleasha Boudreau",
+    "Andrew Bagnall",
+    "Bear River", # check relationship with innovative fisheries
+    "Betty Roethlisberger", # need to add last name, manage typos
+    "Blair Golden",
+    "Brett Savoury", # need to add last name, manage nicknames
+    "Brian Fortune", 
+    "Brian Lewis",
+    "Bruce Hatcher",
+    "Carol Ann",
+    "CMAR",
+    "Connors Diving",
+    "Corey Bowen",
+    "David Burns", # need to expand first initial
+    "Danny Rowe", # need to add last name, expand first initial, expand last initial, manage nicknames
+    "Danielle St. Louis",
+    "David Cook", # need to expand first initial, manage nicknames?
+    "Dave Macneil", # same as Dave McNeill? maybe check occurrence of each in logs
+    "Duncan Bates",
+    "Esha", # last name anywhere?
+    "Evan", # last name anywhere?
+    "Gregor Reid",
+    "Innovative Fisheries", # group with innovative crew
+    "Isabelle Trembley",
+    "Jamie Warford", # check for typos
+    "Jamie Sangster",
+    "Jesse Fortune",
+    "Jessica Feindel",
+    "Joe Erly",
+    "Josh Hatt", # need to expand first initial
+    "Karen Campbell",
+    "Kate Richardson", # need to expand first initial
+    "Kiersten Watson", # confirm this is CMAR kiersten and parse out spare info
+    "L Clancey", # find full first name and expand?
+    "Leeway Marine", # group with leeway crew and leeway marine crew
+    "Matthew Hatcher", # need to expand first initial, manage nicknames
+    "Mark Decker", # need to add last name
+    "Matt King",
+    "Matthew Theriault", 
+    "Merinov",
+    "Michelle Plamondon", # need to add last name
+    "Mike (B&S)", # include the b&s for clarity?
+    "Nathaniel Feindel", 
+    "Nick Nickerson",
+    "Paul Budreski",
+    "Phil Docker",
+    "Robin Stuart",
+    "Sam Pascoe (B&s)",
+    "Scott Hatcher", # need to expand first initial
+    "Stephen Macintosh", 
+    "Timothy Dada", # need to expand first initial, manage typos, manage nicknames
+    "Toby Balch", # need to expand first initial
+    "Todd Mosher", # need to expand first initial
+    "Trevor Munroe",
+    "Troy (B&S)",
+    "Vicki Swan",
+    "Will Rowe" # need to add last name
+  )
+length(identified_individual_attendants)
+
 
 # comments ---------------------------------------------------------------------
 # each of these is likely unique
