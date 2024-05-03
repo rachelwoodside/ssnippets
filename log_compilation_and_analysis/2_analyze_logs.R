@@ -529,6 +529,35 @@ rising_or_falling_nas <- count(logs %>% filter(is.na(rising_or_falling)))
 message(glue("Rising or Falling Tide Values: {rising_or_falling_vals}"))
 message(glue("Rising or Falling Tide NAs: {rising_or_falling_nas}"))
 
+# Define alternative naming groups
+rising_synonyms <-
+  c("+", "low rising", "mid-high rising", "Mid, rising", "rising", "RISING",
+    "Mid tide, rising", "Rising")
+
+falling_synonyms <-
+  c("-", "Dropping", "Falling", "High, falling", "falling", "High tide, falling")
+
+slack_high_synonyms <-
+  c("high", "High tide", "neutral high", "High", "high, turning", "slack_high")
+
+slack_low_synonyms <- c("Low", "low", "Falling (but almost back to rising)",
+                        "Low neutral", "neutral low", "slack_low")
+
+cannot_evaluate_tide_dir <- c("0.55m", "Mid", "Neutral")
+
+logs <-
+  logs %>% mutate(
+    rising_or_falling = case_when(
+      rising_or_falling %in% rising_synonyms ~ "rising",
+      rising_or_falling %in% falling_synonyms ~ "falling",
+      rising_or_falling %in% slack_high_synonyms ~ "slack_high",
+      rising_or_falling %in% slack_low_synonyms ~ "slack_low",
+      rising_or_falling %in% cannot_evaluate_tide_dir ~ NA,
+      .default = rising_or_falling
+    )
+  )
+sort_unique_vals(logs$rising_or_falling)
+
 # height_of_vr_2_ar_base_off_bottom --------------------------------------------
 sort_unique_vals(logs$height_of_vr_2_ar_base_off_bottom)
 height_of_vr2ar_vals <- count(logs %>% filter(!is.na(height_of_vr_2_ar_base_off_bottom)))
