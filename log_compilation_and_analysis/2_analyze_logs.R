@@ -12,6 +12,7 @@ library(readxl)
 library(stringr)
 library(purrr)
 
+
 # Helper functions -------------------------------------------------------------
 prepend_lease_zeroes <- function(lease_num) {
   if (!is.na(lease_num)) {
@@ -72,11 +73,11 @@ print(lease_crosscheck)
 # Please check against other sources to confirm whether leases are valid
 # For example: https://novascotia.ca/fish/aquaculture/site-mapping-tool/
 
-# 5005 and 5007 were experimental leases 
+# 5005 and 5007 were experimental leases
 # 0967 was a historical lease
 
 # Checking for leases paired with multiple stations and vice versa
-unique_stations <- logs %>% 
+unique_stations <- logs %>%
   distinct(location_description, lease)
 
 # status -----------------------------------------------------------------------
@@ -84,7 +85,7 @@ unique_stations <- logs %>%
 logs <- logs %>% mutate(status = tolower(status))
 sort_unique_vals(logs$status)
 # acceptable values are: retrieved, lost, deployed
-logs <- logs %>% 
+logs <- logs %>%
   mutate(status = case_when(status == "missing" ~ "lost",
                             status == "currently_deployed" ~ "deployed",
                             status == "currently deployed" ~ "deployed",
@@ -152,7 +153,7 @@ sort_unique_vals(logs$logger_model)
 # acceptable values are (case-sensitive): HOBO Pro V2, HOBO DO, HOBO Level Logger,
 # TidbiT MX 2203, aquaMeasure SAL, aquaMeasure CHL, aquaMeasure DOT, aquaMeasure SST
 # aquaMeasure TURB, VR2AR, VR2ARX, DST Comp
-# References: 
+# References:
 #https://www.innovasea.com/aquaculture-intelligence/environmental-monitoring/wireless-sensors/
 #https://www.onsetcomp.com/products?f%5B0%5D=environment%3A346&f%5B1%5D=product_type%3A931&f%5B2%5D=product_type%3A936
 #https://www.innovasea.com/fish-tracking/products/acoustic-receivers/
@@ -281,13 +282,13 @@ cb_config_table_file_path <-
   "R:/tracking_sheets/water_quality_cape_breton_configuration.xlsx"
 
 config_table_data <-
-  read_excel(config_table_file_path, na = c("", "n/a", "N/A", "NA")) %>% 
-  select(Station_Name, Depl_Date, Configuration) %>% 
+  read_excel(config_table_file_path, na = c("", "n/a", "N/A", "NA")) %>%
+  select(Station_Name, Depl_Date, Configuration) %>%
   rename(
     "location_description" = Station_Name,
     "deployment" = Depl_Date,
     "table_configuration" = Configuration
-  ) %>% 
+  ) %>%
   mutate(deployment = ymd(deployment))
 
 config_table_join_data <-
@@ -296,16 +297,16 @@ config_table_join_data <-
             by = c("location_description", "deployment"))
 
 cb_config_table_data <-
-  read_excel(cb_config_table_file_path, na = c("", "n/a", "N/A", "NA")) %>% 
-  select(Station_Name, Depl_Date, Configuration) %>% 
+  read_excel(cb_config_table_file_path, na = c("", "n/a", "N/A", "NA")) %>%
+  select(Station_Name, Depl_Date, Configuration) %>%
   rename(
     "location_description" = Station_Name,
     "deployment" = Depl_Date,
     "cb_table_configuration" = Configuration
-  ) %>% 
+  ) %>%
   mutate(deployment = ymd(deployment))
 
-config_table_join_data <- 
+config_table_join_data <-
   left_join(config_table_join_data,
             cb_config_table_data,
             by = c("location_description", "deployment"))
@@ -313,9 +314,9 @@ config_table_join_data <-
 colnames(config_table_join_data)
 
 # Check if any configuration data is not filled by the logs or the config table
-missing_any_config <- config_table_join_data %>% 
-  filter(is.na(config_table_join_data$log_configuration) & 
-           is.na(config_table_join_data$table_configuration) & 
+missing_any_config <- config_table_join_data %>%
+  filter(is.na(config_table_join_data$log_configuration) &
+           is.na(config_table_join_data$table_configuration) &
            is.na(config_table_join_data$cb_table_configuration)) %>%
   select(location_description, deployment, log_configuration, table_configuration, cb_table_configuration)
 # TODO: Review log entries with no configuration data
@@ -410,7 +411,7 @@ identified_individual_attendants <-
     "Betty Roethlisberger", # need to add last name, manage typos
     "Blair Golden",
     "Brett Savoury", # need to add last name, manage nicknames
-    "Brian Fortune", 
+    "Brian Fortune",
     "Brian Lewis",
     "Bruce Hatcher",
     "Carol Ann",
@@ -443,7 +444,7 @@ identified_individual_attendants <-
     "Matthew Hatcher", # need to expand first initial, manage nicknames
     "Mark Decker", # need to add last name
     "Matt King",
-    "Matthew Theriault", 
+    "Matthew Theriault",
     "Merinov",
     "Michelle Plamondon", # need to add last name
     "Mike (B&S)",
@@ -454,7 +455,7 @@ identified_individual_attendants <-
     "Robin Stuart",
     "Sam Pascoe (B&S)",
     "Scott Hatcher", # need to expand first initial
-    "Stephen Macintosh", 
+    "Stephen Macintosh",
     "Timothy Dada", # need to expand first initial, manage typos, manage nicknames
     "Toby Balch", # need to expand first initial
     "Todd Mosher", # need to expand first initial
@@ -540,7 +541,7 @@ message(glue("First Sensor Under Float Measurement Values: {first_sensor_under_f
 message(glue("First Sensor Under Float Measurement NAs: {first_sensor_under_float_nas}"))
 
 # first sensor under float measurements to investigate -------------------------
-# TODO: What values for this are reasonable? More than 25? 
+# TODO: What values for this are reasonable? More than 25?
 logs %>% filter(verified_measurement_below_origin_first_sensor_under_float > 25)
 
 # tide_correction --------------------------------------------------------------
@@ -556,6 +557,35 @@ rising_or_falling_vals <- count(logs %>% filter(!is.na(rising_or_falling)))
 rising_or_falling_nas <- count(logs %>% filter(is.na(rising_or_falling)))
 message(glue("Rising or Falling Tide Values: {rising_or_falling_vals}"))
 message(glue("Rising or Falling Tide NAs: {rising_or_falling_nas}"))
+
+# Define alternative naming groups
+rising_synonyms <-
+  c("+", "low rising", "mid-high rising", "Mid, rising", "rising", "RISING",
+    "Mid tide, rising", "Rising")
+
+falling_synonyms <-
+  c("-", "Dropping", "Falling", "High, falling", "falling", "High tide, falling")
+
+slack_high_synonyms <-
+  c("high", "High tide", "neutral high", "High", "high, turning", "slack_high")
+
+slack_low_synonyms <- c("Low", "low", "Falling (but almost back to rising)",
+                        "Low neutral", "neutral low", "slack_low")
+
+cannot_evaluate_tide_dir <- c("0.55m", "Mid", "Neutral")
+
+logs <-
+  logs %>% mutate(
+    rising_or_falling = case_when(
+      rising_or_falling %in% rising_synonyms ~ "rising",
+      rising_or_falling %in% falling_synonyms ~ "falling",
+      rising_or_falling %in% slack_high_synonyms ~ "slack_high",
+      rising_or_falling %in% slack_low_synonyms ~ "slack_low",
+      rising_or_falling %in% cannot_evaluate_tide_dir ~ NA,
+      .default = rising_or_falling
+    )
+  )
+sort_unique_vals(logs$rising_or_falling)
 
 # height_of_vr_2_ar_base_off_bottom --------------------------------------------
 sort_unique_vals(logs$height_of_vr_2_ar_base_off_bottom)
@@ -609,7 +639,7 @@ sort_unique_vals(logs$dist_to_shore)
 sort_unique_vals(logs$substrate)
 
 
-# TODO: Consider whether these separate notes columns are useful i.e. should 
+# TODO: Consider whether these separate notes columns are useful i.e. should
 # they be standard for CMP?
 # deployment_notes -------------------------------------------------------------
 sort_unique_vals(logs$deployment_notes)
