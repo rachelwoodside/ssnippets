@@ -11,6 +11,7 @@ library(glue)
 library(readxl)
 library(stringr)
 library(purrr)
+library(tidyr)
 
 # Helper functions -------------------------------------------------------------
 prepend_lease_zeroes <- function(lease_num) {
@@ -444,6 +445,58 @@ comment_vals <- count(logs %>% filter(!is.na(comments)))
 comment_nas <- count(logs %>% filter(is.na(comments)))
 message(glue("Comment Values: {comment_vals}"))
 message(glue("Comment NAs: {comment_nas}"))
+sort_unique_vals(logs$comments)
+sort_unique_vals(logs$deployment_notes)
+sort_unique_vals(logs$retrieval_notes)
+sort_unique_vals(logs$data_handler_notes)
+sort_unique_vals(logs$data_processor_notes)
+
+
+#deployment_notes: All from salmon fieldwork. Append "deployment:" before each
+logs <- logs %>%
+  mutate(deployment_notes = if_else(
+    !is.na(deployment_notes),
+    paste0("Deployment: ", deployment_notes),
+    NA))
+
+sort_unique_vals(logs$deployment_notes)
+
+#retrieval_notes: All from salmon fieldwork. Append "retrieval: " before each
+logs <- logs %>%
+  mutate(retrieval_notes = if_else(
+    !is.na(retrieval_notes),
+    paste0("Retrieval: ", retrieval_notes),
+    NA))
+
+sort_unique_vals(logs$retrieval_notes)
+
+#data_handler_notes. Append "Data processor note: " before each
+logs <- logs %>%
+  mutate(data_handler_notes = if_else(
+    !is.na(data_handler_notes),
+    paste0("Data processor note: ", data_handler_notes),
+    NA))
+
+sort_unique_vals(logs$data_handler_notes)
+
+#data_processor_notes. Append "Data processor note: " before each
+logs <- logs %>%
+  mutate(data_processor_notes = if_else(
+    !is.na(data_processor_notes),
+    paste0("Data processor note: ", data_processor_notes),
+    NA))
+
+sort_unique_vals(logs$data_processor_notes)
+
+#combine comments, data_processor_notes, deployment_notes, retrieval_notes,
+#and data_handler_notes columns into one 'notes' column
+logs <- logs %>%
+  unite(col = "notes",
+        c(comments, deployment_notes, retrieval_notes, data_processor_notes, 
+          data_handler_notes), 
+        sep = ". ",
+        na.rm = TRUE)
+sort_unique_vals(logs$notes)
 
 # deployment_waypoint ----------------------------------------------------------
 sort_unique_vals(logs$deployment_waypoint)
