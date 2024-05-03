@@ -28,6 +28,8 @@ sort_unique_vals <- function(vec) {
 
 # File import and basic info ---------------------------------------------------
 
+# TODO: Add in option to read in most recent stacked log copy
+
 filename <- here("stacked_logs_2024-04-29.rds")
 
 logs <- readRDS(filename)
@@ -367,11 +369,37 @@ message(glue("Retrieval Attendant NAs: {retrieval_att_nas}"))
 
 # Examine all attendant values
 all_attendant_vals <- sort(unique(c(logs$deployment_attendant, logs$retrieval_attendant)))
-all_attendant_vals <- all_attendant_vals %>% lapply(str_split_1, pattern=",|&|/|(and)") %>% unlist %>% trimws %>% sort_unique_vals
+all_attendant_vals <- all_attendant_vals %>% lapply(str_split_1, pattern=",|&|/|(and)") %>% unlist %>% str_remove(pattern = "\\.") %>% trimws %>% sort_unique_vals
 all_attendant_vals
 
-albert_spears_alternatives <- c("Albert")
 
+# TODO: Replace most punctuation with ", "
+# " & " (with whitespace because of B&S), "/", 
+
+albert_spears_alts <- c("Albert")
+betty_roethlisberger_alts <- c("betty", "Betty", "Betty Roethlsiberger", "Betty Roethsisberger")
+brett_savoury_alts <- c("Brett", "Brett Savoury", "Bretty Savoury")
+david_burns_alts <- c("D Burns")
+danny_rowe_alts <- c("Dan Rowe", "danny", "Danny", "Danny R", "DannyR")
+david_cook_alts <- c("D Cook")
+innovative_fisheries_alts <- c("Innovative crew")
+jamie_warford_alts <- c("Jaime Warford")
+josh_hatt_alts <- c("J Hatt")
+kate_richardson_alts <- c("K Richardson")
+kiersten_watson_alts <- c("Kiersten", "Kiersten (string didn't surface for Leeway)")
+leeway_alts <- c("leeway crew", "Leeway crew", "Leeway Crew", "leeway marine", "Leeway marine", "Leeway Marine Crew")
+matthew_hatcher_alts <- c("M Hatcher", "Matt Hatcher","MHatcher")
+mark_decker_alts <- c("mark", "Mark")
+michelle_plamondon_alts <- c("michelle", "Michelle")
+scott_hatcher_alts <- c("S Hatcher", "SHatcher")
+timothy_dada_alts <- c("Tim D", "Tim Dada", "Timpthy Dada")
+toby_balch_alts <- c("T Balch")
+todd_mosher_alts <- c("T Mosher")
+will_rowe_alts <- c("will", "Will")
+
+
+
+# TODO: Add function to alphabetically sort attendant names within column?
 
 identified_individual_attendants <-
   c(
@@ -391,11 +419,12 @@ identified_individual_attendants <-
     "Corey Bowen",
     "David Burns", # need to expand first initial
     "Danny Rowe", # need to add last name, expand first initial, expand last initial, manage nicknames
-    "Danielle St. Louis",
+    "Danielle St Louis",
     "David Cook", # need to expand first initial, manage nicknames?
     "Dave Macneil", # same as Dave McNeill? maybe check occurrence of each in logs
+    "Dave Mcneill", 
     "Duncan Bates",
-    "Esha", # last name anywhere?
+    "Esha", # last name anywhere? seems to have some weird formatting associated - check in situ
     "Evan", # last name anywhere?
     "Gregor Reid",
     "Innovative Fisheries", # group with innovative crew
@@ -417,13 +446,13 @@ identified_individual_attendants <-
     "Matthew Theriault", 
     "Merinov",
     "Michelle Plamondon", # need to add last name
-    "Mike (B&S)", # include the b&s for clarity?
+    "Mike (B&S)",
     "Nathaniel Feindel", 
     "Nick Nickerson",
     "Paul Budreski",
     "Phil Docker",
     "Robin Stuart",
-    "Sam Pascoe (B&s)",
+    "Sam Pascoe (B&S)",
     "Scott Hatcher", # need to expand first initial
     "Stephen Macintosh", 
     "Timothy Dada", # need to expand first initial, manage typos, manage nicknames
