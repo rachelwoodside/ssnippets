@@ -341,19 +341,132 @@ logs %>% filter(surface_buoy == "Mounted to oyster cage")
 # check for rows missing surface_buoy values
 any(is.na(logs$surface_buoy))
 
-# CODE REVIEW FEEDBACK ENDS AROUND HERE ----------------------------------------
+# deployment_attendant and retrieval_attendant cleanup prep --------------------
+# Examine all attendant values
+all_attendant_vals <- sort(unique(c(logs$deployment_attendant, logs$retrieval_attendant)))
+all_attendant_vals <- all_attendant_vals %>% lapply(str_split_1, pattern=",| & | &|/|(and)") %>% unlist %>% str_remove(pattern = "\\.") %>% trimws %>% sort_unique_vals
+all_attendant_vals
+
+
+# TODO: There's probably a better way to do this but this is what I could 
+# come up with on a Friday afternoon and it works?
+# Ideally one that minimizes all the naming repetition
+
+attendant_name_mapping <- 
+  c(
+    "Albert Spears" = "Albert Spears",
+    "Albert" = "Albert Spears",
+    "Betty Roethlisberger" = "Betty Roethlisberger",
+    "betty" = "Betty Roethlisberger",    
+    "Betty" = "Betty Roethlisberger", 
+    "Betty Roethlsiberger" = "Betty Roethlisberger",
+    "Betty Roethsisberger" = "Betty Roethlisberger",
+    "Brett Savoury" = "Brett Savoury",
+    "Brett" = "Brett Savoury",
+    "Bretty Savoury" = "Brett Savoury",
+    "D Burns" = "David Burns",
+    "Danny Rowe" = "Danny Rowe",
+    "Dan Rowe" = "Danny Rowe",
+    "danny" = "Danny Rowe",
+    "Danny" = "Danny Rowe",
+    "Danny R" = "Danny Rowe",
+    "DannyR" = "Danny Rowe",
+    "D Cook" = "David Cook",
+    "Innovative crew" = "Innovative Fisheries",
+    "Jaime Warford" = "Jamie Warford",
+    "J Hatt" = "Josh Hatt",
+    "K Richardson" = "Kate Richardson",
+    "Kiersten" = "Kiersten Watson",
+    "Kiersten (string didn't surface for Leeway)" = "Kiersten Watson",
+    "leeway crew" = "Leeway Marine",
+    "Leeway crew" = "Leeway Marine",
+    "Leeway Crew" = "Leeway Marine",
+    "leeway marine" = "Leeway Marine",
+    "Leeway marine" = "Leeway Marine",
+    "Leeway Marine Crew" = "Leeway Marine",
+    "M Hatcher" = "Matthew Hatcher",
+    "Matt Hatcher" = "Matthew Hatcher",
+    "MHatcher" = "Matthew Hatcher",
+    "mark" = "Mark Decker",
+    "Mark" = "Mark Decker",
+    "Michelle Plamondon" = "Michelle Plamondon",
+    "michelle" = "Michelle Plamondon",
+    "Michelle" = "Michelle Plamondon",
+    "S Hatcher" = "Scott Hatcher",
+    "SHatcher" = "Scott Hatcher",
+    "Tim D" = "Timothy Dada",
+    "Tim Dada" = "Timothy Dada",
+    "Timpthy Dada" = "Timothy Dada",
+    "T Balch" = "Toby Balch",
+    "T Mosher" = "Todd Mosher",
+    "Will Rowe" = "Will Rowe",
+    "will" = "Will Rowe",
+    "Will" = "Will Rowe"
+  )
+
+standardize_attendant_format <- function(attendant_string) {
+  punctuation_replacement_regex <- regex("[:blank:]+&[:blank:]*|[:blank:]*/[:blank:]*|[:blank:]*and[:blank:]*|[:blank:]*,[:blank:]*")
+  attendant_string %>% str_remove_all("\\.") %>% str_replace_all(pattern=punctuation_replacement_regex, replacement=", ")
+}
+
+str_replace_attendant_names <- function(attendant_string) {
+  attendant_string %>%
+    str_replace_all(albert_spears_alts, "Albert Spears") %>%
+    str_replace_all(betty_roethlisberger_alts, "Betty Roethlisberger") %>%
+    str_replace_all(brett_savoury_alts, "Brett Savoury") %>%
+    str_replace_all(david_burns_alts, "David Burns") %>%
+    str_replace_all(danny_rowe_alts, "Danny Rowe") %>%
+    str_replace_all(david_cook_alts, "David Cook") %>%
+    str_replace_all(innovative_fisheries_alts, "Innovative Fisheries") %>%
+    str_replace_all(jamie_warford_alts, "Jamie Warford") %>%
+    str_replace_all(josh_hatt_alts, "Josh Hatt") %>%
+    str_replace_all(kate_richardson_alts, "Kate Richardson") %>%
+    str_replace_all(kiersten_watson_alts, "Kiersten Watson") %>%
+    str_replace_all(leeway_alts, "Leeway Marine") %>%
+    str_replace_all(matthew_hatcher_alts, "Matthew Hatcher") %>%
+    str_replace_all(mark_decker_alts, "Mark Decker") %>%
+    str_replace_all(michelle_plamondon_alts, "Michelle Plamondon") %>%
+    str_replace_all(scott_hatcher_alts, "Scott Hatcher") %>%
+    str_replace_all(timothy_dada_alts, "Timothy Dada") %>%
+    str_replace_all(toby_balch_alts, "Toby Balch") %>%
+    str_replace_all(todd_mosher_alts, "Todd Mosher") %>%
+    str_replace_all(will_rowe_alts, "Will Rowe")
+}
+
+test_attendant_string <- "Albert, Betty, S Hatcher, M Hatcher, Leeway Crew"
+test_attendant_string %>%
+  str_replace_all(attendant_name_mapping)
+
+logs <- logs %>% mutate(std_depl_attendant = standardize_attendant_format(deployment_attendant)) %>%
+  mutate(std_depl_attendant = str_replace_all(std_depl_attendant, alternative_name_mapping))
+
+sort_unique_vals(logs$std_depl_attendant)
+sort_unique_vals(logs$deployment_attendant)
+
+
+# TODO: Replace most punctuation with ", "
+# " & " (with whitespace because of B&S), "/", 
+
+# TODO: Add function to alphabetically sort attendant names within column?
 
 # deployment_attendant ---------------------------------------------------------
-# TODO: Clean up and standardize deployment attendant names
-sort_unique_vals(logs$deployment_attendant)
-depl_att_vals <- count(logs %>% filter(!is.na(deployment_attendant)))
-depl_att_nas <- count(logs %>% filter(is.na(deployment_attendant)))
-message(glue("Deployment Attendant Values: {depl_att_vals}"))
-message(glue("Deployment Attendant NAs: {depl_att_nas}"))
+# sort_unique_vals(logs$deployment_attendant)
+# depl_att_vals <- count(logs %>% filter(!is.na(deployment_attendant)))
+# depl_att_nas <- count(logs %>% filter(is.na(deployment_attendant)))
+# message(glue("Deployment Attendant Values: {depl_att_vals}"))
+# message(glue("Deployment Attendant NAs: {depl_att_nas}"))
 
+# Standardize spacing and punctuation a bit
+logs <- logs %>% mutate(deployment_attendant_test = case_when(!is.na(deployment_attendant) ~ logs$deployment_attendant %>% lapply(str_split_1, pattern=",| & | &|/|(and)") %>% str_remove(pattern = "\\.") %>% trimws,
+                                                .default = deployment_attendant))
+
+c("pattern you want to find" = "replacement value")
+
+# Check deployment_attendant text length
 sort_unique_vals(logs$deployment_attendant)
 depl_attendant_text_len <- unlist(lapply(logs$deployment_attendant, str_length))
 max(depl_attendant_text_len, na.rm=TRUE)
+
 
 # retrieval_attendant ----------------------------------------------------------
 # TODO: Clean up and standardize retrieval attendant names
@@ -366,106 +479,6 @@ retrieval_att_nas <-
   count(logs %>% filter(is.na(retrieval_attendant)))
 message(glue("Retrieval Attendant Values: {retrieval_att_vals}"))
 message(glue("Retrieval Attendant NAs: {retrieval_att_nas}"))
-
-
-# Examine all attendant values
-all_attendant_vals <- sort(unique(c(logs$deployment_attendant, logs$retrieval_attendant)))
-all_attendant_vals <- all_attendant_vals %>% lapply(str_split_1, pattern=",|&|/|(and)") %>% unlist %>% str_remove(pattern = "\\.") %>% trimws %>% sort_unique_vals
-all_attendant_vals
-
-
-# TODO: Replace most punctuation with ", "
-# " & " (with whitespace because of B&S), "/", 
-
-albert_spears_alts <- c("Albert")
-betty_roethlisberger_alts <- c("betty", "Betty", "Betty Roethlsiberger", "Betty Roethsisberger")
-brett_savoury_alts <- c("Brett", "Brett Savoury", "Bretty Savoury")
-david_burns_alts <- c("D Burns")
-danny_rowe_alts <- c("Dan Rowe", "danny", "Danny", "Danny R", "DannyR")
-david_cook_alts <- c("D Cook")
-innovative_fisheries_alts <- c("Innovative crew")
-jamie_warford_alts <- c("Jaime Warford")
-josh_hatt_alts <- c("J Hatt")
-kate_richardson_alts <- c("K Richardson")
-kiersten_watson_alts <- c("Kiersten", "Kiersten (string didn't surface for Leeway)")
-leeway_alts <- c("leeway crew", "Leeway crew", "Leeway Crew", "leeway marine", "Leeway marine", "Leeway Marine Crew")
-matthew_hatcher_alts <- c("M Hatcher", "Matt Hatcher","MHatcher")
-mark_decker_alts <- c("mark", "Mark")
-michelle_plamondon_alts <- c("michelle", "Michelle")
-scott_hatcher_alts <- c("S Hatcher", "SHatcher")
-timothy_dada_alts <- c("Tim D", "Tim Dada", "Timpthy Dada")
-toby_balch_alts <- c("T Balch")
-todd_mosher_alts <- c("T Mosher")
-will_rowe_alts <- c("will", "Will")
-
-
-
-# TODO: Add function to alphabetically sort attendant names within column?
-
-identified_individual_attendants <-
-  c(
-    "Albert Spears", # need to add last name
-    "Aleasha Boudreau",
-    "Andrew Bagnall",
-    "Bear River", # check relationship with innovative fisheries
-    "Betty Roethlisberger", # need to add last name, manage typos
-    "Blair Golden",
-    "Brett Savoury", # need to add last name, manage nicknames
-    "Brian Fortune",
-    "Brian Lewis",
-    "Bruce Hatcher",
-    "Carol Ann",
-    "CMAR",
-    "Connors Diving",
-    "Corey Bowen",
-    "David Burns", # need to expand first initial
-    "Danny Rowe", # need to add last name, expand first initial, expand last initial, manage nicknames
-    "Danielle St Louis",
-    "David Cook", # need to expand first initial, manage nicknames?
-    "Dave Macneil", # same as Dave McNeill? maybe check occurrence of each in logs
-    "Dave Mcneill", 
-    "Duncan Bates",
-    "Esha", # last name anywhere? seems to have some weird formatting associated - check in situ
-    "Evan", # last name anywhere?
-    "Gregor Reid",
-    "Innovative Fisheries", # group with innovative crew
-    "Isabelle Trembley",
-    "Jamie Warford", # check for typos
-    "Jamie Sangster",
-    "Jesse Fortune",
-    "Jessica Feindel",
-    "Joe Erly",
-    "Josh Hatt", # need to expand first initial
-    "Karen Campbell",
-    "Kate Richardson", # need to expand first initial
-    "Kiersten Watson", # confirm this is CMAR kiersten and parse out spare info
-    "L Clancey", # find full first name and expand?
-    "Leeway Marine", # group with leeway crew and leeway marine crew
-    "Matthew Hatcher", # need to expand first initial, manage nicknames
-    "Mark Decker", # need to add last name
-    "Matt King",
-    "Matthew Theriault",
-    "Merinov",
-    "Michelle Plamondon", # need to add last name
-    "Mike (B&S)",
-    "Nathaniel Feindel", 
-    "Nick Nickerson",
-    "Paul Budreski",
-    "Phil Docker",
-    "Robin Stuart",
-    "Sam Pascoe (B&S)",
-    "Scott Hatcher", # need to expand first initial
-    "Stephen Macintosh",
-    "Timothy Dada", # need to expand first initial, manage typos, manage nicknames
-    "Toby Balch", # need to expand first initial
-    "Todd Mosher", # need to expand first initial
-    "Trevor Munroe",
-    "Troy (B&S)",
-    "Vicki Swan",
-    "Will Rowe" # need to add last name
-  )
-length(identified_individual_attendants)
-
 
 # comments ---------------------------------------------------------------------
 # each of these is likely unique
