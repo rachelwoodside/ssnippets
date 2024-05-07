@@ -11,6 +11,7 @@ library(glue)
 library(readxl)
 library(stringr)
 library(purrr)
+library(tidyr)
 
 
 # Helper functions -------------------------------------------------------------
@@ -264,14 +265,14 @@ sort_unique_vals(logs$mooring_type)
 # configuration ----------------------------------------------------------------
 sort_unique_vals(logs$configuration)
 # Fill in "cinderblock" mount_type as "attached to fixed structure" configuration
-# logs <-
-#   logs %>% mutate(
-#     configuration = case_when(
-#       mount_type == "cinder block" |
-#         mount_type == "cinderblock" ~ "attached to fixed structure",
-#       .default = configuration
-#     )
-#   )
+logs <-
+  logs %>% mutate(
+    configuration = case_when(
+      mount_type == "cinder block" |
+        mount_type == "cinderblock" ~ "attached to fixed structure",
+      .default = configuration
+    )
+  )
 
 logs <- logs %>% rename("log_configuration" = configuration)
 
@@ -344,110 +345,94 @@ any(is.na(logs$surface_buoy))
 # deployment_attendant and retrieval_attendant cleanup prep --------------------
 # Examine all attendant values
 all_attendant_vals <- sort(unique(c(logs$deployment_attendant, logs$retrieval_attendant)))
-all_attendant_vals <- all_attendant_vals %>% lapply(str_split_1, pattern=",| & | &|/|(and)") %>% unlist %>% str_remove(pattern = "\\.") %>% trimws %>% sort_unique_vals
+all_attendant_vals <-
+  all_attendant_vals %>%
+  lapply(str_split_1, pattern = ",| & | &|/|(and)") %>%
+  unlist %>%
+  str_remove(pattern = "\\.") %>%
+  trimws %>%
+  sort_unique_vals
 all_attendant_vals
 
-
-# TODO: There's probably a better way to do this but this is what I could 
-# come up with on a Friday afternoon and it works?
-# Ideally one that minimizes all the naming repetition
-
-attendant_name_mapping <- 
+# Define alternative naming identified in manual examination of attendant vals
+albert_spears_alts <- c("Albert")
+betty_roethlisberger_alts <-
+  c("betty",
+    "Betty",
+    "Betty Roethlsiberger",
+    "Betty Roethsisberger")
+brett_savoury_alts <- c("Brett", "Brett Savoury", "Bretty Savoury")
+david_burns_alts <- c("D Burns")
+danny_rowe_alts <-
+  c("Dan Rowe", "danny", "Danny", "Danny R", "DannyR")
+david_cook_alts <- c("D Cook")
+innovative_fisheries_alts <- c("Innovative crew")
+jamie_warford_alts <- c("Jaime Warford")
+josh_hatt_alts <- c("J Hatt")
+kate_richardson_alts <- c("K Richardson")
+kiersten_watson_alts <-
+  c("Kiersten", "Kiersten (string didn't surface for Leeway)")
+leeway_alts <-
   c(
-    "Albert Spears" = "Albert Spears",
-    "Albert" = "Albert Spears",
-    "Betty Roethlisberger" = "Betty Roethlisberger",
-    "betty" = "Betty Roethlisberger",    
-    "Betty" = "Betty Roethlisberger", 
-    "Betty Roethlsiberger" = "Betty Roethlisberger",
-    "Betty Roethsisberger" = "Betty Roethlisberger",
-    "Brett Savoury" = "Brett Savoury",
-    "Brett" = "Brett Savoury",
-    "Bretty Savoury" = "Brett Savoury",
-    "D Burns" = "David Burns",
-    "Danny Rowe" = "Danny Rowe",
-    "Dan Rowe" = "Danny Rowe",
-    "danny" = "Danny Rowe",
-    "Danny" = "Danny Rowe",
-    "Danny R" = "Danny Rowe",
-    "DannyR" = "Danny Rowe",
-    "D Cook" = "David Cook",
-    "Innovative crew" = "Innovative Fisheries",
-    "Jaime Warford" = "Jamie Warford",
-    "J Hatt" = "Josh Hatt",
-    "K Richardson" = "Kate Richardson",
-    "Kiersten" = "Kiersten Watson",
-    "Kiersten (string didn't surface for Leeway)" = "Kiersten Watson",
-    "leeway crew" = "Leeway Marine",
-    "Leeway crew" = "Leeway Marine",
-    "Leeway Crew" = "Leeway Marine",
-    "leeway marine" = "Leeway Marine",
-    "Leeway marine" = "Leeway Marine",
-    "Leeway Marine Crew" = "Leeway Marine",
-    "M Hatcher" = "Matthew Hatcher",
-    "Matt Hatcher" = "Matthew Hatcher",
-    "MHatcher" = "Matthew Hatcher",
-    "mark" = "Mark Decker",
-    "Mark" = "Mark Decker",
-    "Michelle Plamondon" = "Michelle Plamondon",
-    "michelle" = "Michelle Plamondon",
-    "Michelle" = "Michelle Plamondon",
-    "S Hatcher" = "Scott Hatcher",
-    "SHatcher" = "Scott Hatcher",
-    "Tim D" = "Timothy Dada",
-    "Tim Dada" = "Timothy Dada",
-    "Timpthy Dada" = "Timothy Dada",
-    "T Balch" = "Toby Balch",
-    "T Mosher" = "Todd Mosher",
-    "Will Rowe" = "Will Rowe",
-    "will" = "Will Rowe",
-    "Will" = "Will Rowe"
+    "leeway crew",
+    "Leeway crew",
+    "Leeway Crew",
+    "leeway marine",
+    "Leeway marine",
+    "Leeway Marine Crew"
   )
+matthew_hatcher_alts <- c("M Hatcher", "Matt Hatcher", "MHatcher")
+mark_decker_alts <- c("mark", "Mark")
+michelle_plamondon_alts <- c("michelle", "Michelle")
+scott_hatcher_alts <- c("S Hatcher", "SHatcher")
+timothy_dada_alts <- c("Tim D", "Tim Dada", "Timpthy Dada")
+toby_balch_alts <- c("T Balch")
+todd_mosher_alts <- c("T Mosher")
+will_rowe_alts <- c("will", "Will")
 
-standardize_attendant_format <- function(attendant_string) {
-  punctuation_replacement_regex <- regex("[:blank:]+&[:blank:]*|[:blank:]*/[:blank:]*|[:blank:]*and[:blank:]*|[:blank:]*,[:blank:]*")
-  attendant_string %>% str_remove_all("\\.") %>% str_replace_all(pattern=punctuation_replacement_regex, replacement=", ")
+# Define helper functions
+
+# Replace values by matching correct naming to alternative names
+fix_attendant_val <- function(attendant_val) {
+  attendant_val = case_when(
+    attendant_val %in% albert_spears_alts ~ "Albert Spears",
+    attendant_val %in% betty_roethlisberger_alts ~ "Betty Roethlisberger",
+    attendant_val %in% brett_savoury_alts ~ "Brett Savoury",
+    attendant_val %in% david_burns_alts ~ "David Burns",
+    attendant_val %in% danny_rowe_alts ~ "Danny Rowe",
+    attendant_val %in% david_cook_alts ~ "David Cook",
+    attendant_val %in% innovative_fisheries_alts ~ "Innovative Fisheries",
+    attendant_val %in% jamie_warford_alts ~ "Jamie Warford",
+    attendant_val %in% josh_hatt_alts ~ "Josh Hatt",
+    attendant_val %in% kate_richardson_alts ~ "Kate Richardson",
+    attendant_val %in% kiersten_watson_alts ~ "Kiersten Watson",
+    attendant_val %in% leeway_alts ~ "Leeway Marine",
+    attendant_val %in% matthew_hatcher_alts ~ "Matthew Hatcher",
+    attendant_val %in% mark_decker_alts ~ "Mark Decker",
+    attendant_val %in% michelle_plamondon_alts ~ "Michelle Plamondon",
+    attendant_val %in% scott_hatcher_alts ~ "Scott Hatcher",
+    attendant_val %in% timothy_dada_alts ~ "Timothy Dada",
+    attendant_val %in% toby_balch_alts ~ "Toby Balch",
+    attendant_val %in% todd_mosher_alts ~ "Todd Mosher",
+    attendant_val %in% will_rowe_alts ~ "Will Rowe",
+    .default = attendant_val
+  )
 }
 
-str_replace_attendant_names <- function(attendant_string) {
-  attendant_string %>%
-    str_replace_all(albert_spears_alts, "Albert Spears") %>%
-    str_replace_all(betty_roethlisberger_alts, "Betty Roethlisberger") %>%
-    str_replace_all(brett_savoury_alts, "Brett Savoury") %>%
-    str_replace_all(david_burns_alts, "David Burns") %>%
-    str_replace_all(danny_rowe_alts, "Danny Rowe") %>%
-    str_replace_all(david_cook_alts, "David Cook") %>%
-    str_replace_all(innovative_fisheries_alts, "Innovative Fisheries") %>%
-    str_replace_all(jamie_warford_alts, "Jamie Warford") %>%
-    str_replace_all(josh_hatt_alts, "Josh Hatt") %>%
-    str_replace_all(kate_richardson_alts, "Kate Richardson") %>%
-    str_replace_all(kiersten_watson_alts, "Kiersten Watson") %>%
-    str_replace_all(leeway_alts, "Leeway Marine") %>%
-    str_replace_all(matthew_hatcher_alts, "Matthew Hatcher") %>%
-    str_replace_all(mark_decker_alts, "Mark Decker") %>%
-    str_replace_all(michelle_plamondon_alts, "Michelle Plamondon") %>%
-    str_replace_all(scott_hatcher_alts, "Scott Hatcher") %>%
-    str_replace_all(timothy_dada_alts, "Timothy Dada") %>%
-    str_replace_all(toby_balch_alts, "Toby Balch") %>%
-    str_replace_all(todd_mosher_alts, "Todd Mosher") %>%
-    str_replace_all(will_rowe_alts, "Will Rowe")
+# Set all delimiters to commas
+standardize_delimiter <- function(attendant_str) {
+  punctuation_replacement_regex <-
+    regex(
+      "[:blank:]+&[:blank:]*|[:blank:]*/[:blank:]*|[:blank:]*and[:blank:]*|[:blank:]*,[:blank:]*"
+    )
+  attendant_str %>%
+    str_remove_all("\\.") %>%
+    str_replace_all(pattern = punctuation_replacement_regex, replacement = ",")
 }
 
-test_attendant_string <- "Albert, Betty, S Hatcher, M Hatcher, Leeway Crew"
-test_attendant_string %>%
-  str_replace_all(attendant_name_mapping)
-
-logs <- logs %>% mutate(std_depl_attendant = standardize_attendant_format(deployment_attendant)) %>%
-  mutate(std_depl_attendant = str_replace_all(std_depl_attendant, alternative_name_mapping))
-
-sort_unique_vals(logs$std_depl_attendant)
-sort_unique_vals(logs$deployment_attendant)
-
-
-# TODO: Replace most punctuation with ", "
-# " & " (with whitespace because of B&S), "/", 
-
-# TODO: Add function to alphabetically sort attendant names within column?
+# TODO? Add function to alphabetically sort attendant names within column?
+# Looked into this initially but seemed overcomplicated compared to the value
+# added
 
 # deployment_attendant ---------------------------------------------------------
 # sort_unique_vals(logs$deployment_attendant)
@@ -456,29 +441,81 @@ sort_unique_vals(logs$deployment_attendant)
 # message(glue("Deployment Attendant Values: {depl_att_vals}"))
 # message(glue("Deployment Attendant NAs: {depl_att_nas}"))
 
-# Standardize spacing and punctuation a bit
-logs <- logs %>% mutate(deployment_attendant_test = case_when(!is.na(deployment_attendant) ~ logs$deployment_attendant %>% lapply(str_split_1, pattern=",| & | &|/|(and)") %>% str_remove(pattern = "\\.") %>% trimws,
-                                                .default = deployment_attendant))
+# Clean up deployment attendant column
+logs <- logs %>%
+  # Standardize delimiter
+  mutate(deployment_attendant_sep = 
+           standardize_delimiter(deployment_attendant)) %>%
+  # Separate into columns for each individual attendant
+  separate_wider_delim(
+    deployment_attendant_sep,
+    delim = ",",
+    names_sep = "_",
+    too_few = "align_start"
+  ) %>%
+  # Replace invalid values according to mapping defined previously
+  mutate(across(contains("deployment_attendant_sep"), fix_attendant_str)) %>%
+  # Remove empty strings
+  mutate(across(contains("deployment_attendant_sep"), na_if, "")) %>%
+  # Reunite separate columns and remove temporary columns
+  unite(
+    col = "deployment_attendant",
+    contains("deployment_attendant_sep"),
+    sep = ", ",
+    remove = TRUE,
+    na.rm = TRUE
+  )
 
-c("pattern you want to find" = "replacement value")
-
+sort_unique_vals(logs$deployment_attendant)
+  
 # Check deployment_attendant text length
 sort_unique_vals(logs$deployment_attendant)
-depl_attendant_text_len <- unlist(lapply(logs$deployment_attendant, str_length))
-max(depl_attendant_text_len, na.rm=TRUE)
-
+depl_attendant_text_len <-
+  unlist(lapply(logs$deployment_attendant, str_length))
+max(depl_attendant_text_len, na.rm = TRUE)
 
 # retrieval_attendant ----------------------------------------------------------
-# TODO: Clean up and standardize retrieval attendant names
 sort_unique_vals(logs$retrieval_attendant)
 # Retrieval attendant as "Line 3, East end"?
 #logs %>% filter(retrieval_attendant == "Line 3, East end")
-retrieval_att_vals <-
-  count(logs %>% filter(!is.na(retrieval_attendant)))
-retrieval_att_nas <-
-  count(logs %>% filter(is.na(retrieval_attendant)))
-message(glue("Retrieval Attendant Values: {retrieval_att_vals}"))
-message(glue("Retrieval Attendant NAs: {retrieval_att_nas}"))
+# retrieval_att_vals <-
+#   count(logs %>% filter(!is.na(retrieval_attendant)))
+# retrieval_att_nas <-
+#   count(logs %>% filter(is.na(retrieval_attendant)))
+# message(glue("Retrieval Attendant Values: {retrieval_att_vals}"))
+# message(glue("Retrieval Attendant NAs: {retrieval_att_nas}"))
+
+# Clean up retrieval attendant column
+logs <- logs %>%
+  # Standardize delimiter
+  mutate(retrieval_attendant_sep = standardize_delimiter(retrieval_attendant)) %>%
+  # Separate into columns for each individual attendant
+  separate_wider_delim(
+    retrieval_attendant_sep,
+    delim = ",",
+    names_sep = "_",
+    too_few = "align_start"
+  ) %>%
+  # Replace invalid values according to mapping defined previously
+  mutate(across(contains("retrieval_attendant_sep"), fix_attendant_str)) %>%
+  # Remove empty strings
+  mutate(across(contains("retrieval_attendant_sep"), na_if, "")) %>%
+  # Reunite separate columns and remove temporary columns
+  unite(
+    col = "retrieval_attendant",
+    contains("retrieval_attendant_sep"),
+    sep = ", ",
+    remove = TRUE,
+    na.rm = TRUE
+  )
+
+sort_unique_vals(logs$retrieval_attendant)
+
+# Check retrieval_attendant text length
+sort_unique_vals(logs$retrieval_attendant)
+retrieval_attendant_text_len <-
+  unlist(lapply(logs$retrieval_attendant, str_length))
+max(retrieval_attendant_text_len, na.rm = TRUE)
 
 # comments ---------------------------------------------------------------------
 # each of these is likely unique
