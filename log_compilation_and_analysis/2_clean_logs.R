@@ -372,7 +372,9 @@ sort_unique_vals(logs$mount_type)
 # mooring_type -----------------------------------------------------------------
 sort_unique_vals(logs$mooring_type)
 logs <- logs %>% mutate(mooring_type = tolower(mooring_type))
-# TODO: Clean up and standardize mooring types
+# Clean up and standardize mooring types
+logs <- logs %>% 
+  mutate(mooring_type = str_replace(mooring_type, pattern = "float$", replacement = "floating"))
 sort_unique_vals(logs$mooring_type)
 
 # configuration ----------------------------------------------------------------
