@@ -9,6 +9,7 @@ library(snakecase)
 library(here)
 library(glue)
 library(readxl)
+library(readr)
 library(stringr)
 library(purrr)
 library(tidyr)
@@ -852,19 +853,62 @@ sort_unique_vals(logs$photos_taken)
 
 # anchor_type ------------------------------------------------------------------
 sort_unique_vals(logs$anchor_type)
-# Standardize punctuation and numerical representations
+
+# TODO: Extract into helper functions
+weight_in_lbs_regex <- regex(pattern = "[0-9]+lbs?")
+weight_in_kg_regex <- regex(pattern = "[0-9]+kgs?")
+qualifiers_to_strip_regex <- regex(pattern = "big |large |heavy |small ")
 logs <- logs %>%
+  # Standardize punctuation and numerical representations
   mutate(anchor_type = tolower(anchor_type)) %>%
   mutate(anchor_type = str_remove(anchor_type, pattern = ",")) %>%
   mutate(anchor_type = str_replace(anchor_type, pattern = "-", replacement = " ")) %>%
-  mutate(anchor_type = str_replace(anchor_type, pattern = "^one ", replacement = "1 ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^one |single ", replacement = "1 ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = " one ", replacement = " 1 ")) %>%
   mutate(anchor_type = str_replace(anchor_type, pattern = "^two ", replacement = "2 ")) %>%
   mutate(anchor_type = str_replace(anchor_type, pattern = "^three ", replacement = "3 ")) %>%
   mutate(anchor_type = str_replace(anchor_type, pattern = "^four ", replacement = "4 ")) %>%
-  mutate(anchor_type = str_replace(anchor_type, pattern = " plus ", replacement = " + "))
-
-
+  mutate(anchor_type = str_replace(anchor_type, pattern = " plus ", replacement = " + ")) %>%
+  # Extract anchor weights and convert to kg where necessary
+  mutate(anchor_weight_in_lbs = str_match(anchor_type, pattern = weight_in_lbs_regex)) %>%
+  mutate(anchor_weight_in_lbs = parse_number(anchor_weight_in_lbs)) %>%
+  mutate(anchor_weight_in_kg = str_match(anchor_type, pattern = weight_in_kg_regex)) %>%
+  mutate(anchor_weight_in_kg = parse_number(anchor_weight_in_kg)) %>%
+  # TODO: Do we want this many sigfigs?
+  mutate(anchor_weight_in_kg = case_when(is.na(anchor_weight_in_kg) ~ (anchor_weight_in_lbs * 0.45359237))) %>%
+  select(!anchor_weight_in_lbs) %>%
+  # Remove weights from anchor_type column
+  mutate(anchor_type = str_remove(anchor_type, pattern = weight_in_lbs_regex)) %>%
+  mutate(anchor_type = str_remove(anchor_type, pattern = weight_in_kg_regex)) %>%
+  mutate(anchor_type = str_squish(anchor_type)) %>%
+  mutate(anchor_type = na_if(anchor_type,"")) %>%
+  # Manage typos and some basic synonyms
+  mutate(anchor_type = str_replace(anchor_type, pattern = "(h pile beam)|(h beam)", replacement = "H beam")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "cemment|concrete", replacement = "cement")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "bock", replacement = "block")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "sections of", replacement = "lengths of")) %>%
+  mutate(anchor_type = str_remove(anchor_type, pattern = "lengths of ")) %>%
+  mutate(anchor_type = str_remove(anchor_type, pattern = "length ")) %>%
+  mutate(anchor_type = str_remove(anchor_type, pattern = "an ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "chain links", replacement = "chains")) %>%
+  # Strip out extra descriptors and qualifiers with debatable meaningfulness
+  mutate(anchor_type = str_remove(anchor_type, pattern = qualifiers_to_strip_regex)) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = " heavy ", replacement = " ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = " steel rotors", replacement = " rotors")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "steel rock", replacement = "rock")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = " steel chain", replacement = " chains")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^steel chains$", replacement = "chains")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^steel chain$", replacement = "chains")) %>%
+  # Correct singular vs plural where necessary
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^2 chain$", replacement = "2 chains")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^2 H beam$", replacement = "2 H beams")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^3 chain$", replacement = "3 chains")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^chain$", replacement = "chains"))
+  
 sort_unique_vals(logs$anchor_type)
+sort_unique_vals(logs$anchor_weight_in_kg)
+
+colnames(logs)
 
 
 # Check length of anchor_type text
