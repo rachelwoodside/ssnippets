@@ -315,11 +315,19 @@ logs <-
 colnames(logs)
 
 # Check if any configuration data is not filled by the logs or the config table
-missing_any_config <- config_table_join_data %>%
-  filter(is.na(config_table_join_data$log_configuration) &
-           is.na(config_table_join_data$table_configuration) &
-           is.na(config_table_join_data$cb_table_configuration)) %>%
-  select(location_description, deployment, log_configuration, table_configuration, cb_table_configuration)
+missing_any_config <- logs %>%
+  filter(
+    is.na(logs$log_configuration) &
+      is.na(logs$table_configuration) &
+      is.na(logs$cb_table_configuration)
+  ) %>%
+  select(
+    location_description,
+    deployment,
+    log_configuration,
+    table_configuration,
+    cb_table_configuration
+  )
 
 # TODO? Consider using right join to check for entries in the config table
 # that are missing from the logs
@@ -332,7 +340,14 @@ logs <-
       as.numeric(!is.na(cb_table_configuration))
   ))
 
-duplicate_config_logs <- logs %>% filter(config_count > 1) %>% select(location_description, deployment, log_configuration, table_configuration, cb_table_configuration)
+duplicate_config_logs <-
+  logs %>% filter(config_count > 1) %>% select(
+    location_description,
+    deployment,
+    log_configuration,
+    table_configuration,
+    cb_table_configuration
+  )
 
 # Confirm that for columns with more than one configuration recorded, 
 # the records match
@@ -349,10 +364,16 @@ duplicate_config_logs %>% filter(
 # Since the duplicate config entry values all match, we can simply take the 
 # first value that is not NA out of all of the columns
 logs <-
-  logs %>% mutate(configuration = case_when(!is.na(log_configuration) ~ log_configuration, # prioritize log configuration
-                                             !is.na(table_configuration) ~ table_configuration, # then config table
-                                             !is.na(cb_table_configuration) ~ cb_table_configuration, # then CB config table
-                                             .default = NA)  
+  logs %>% mutate(
+    configuration = case_when(
+      # prioritize configuration from the log
+      !is.na(log_configuration) ~ log_configuration,
+      # then the configuration table
+      !is.na(table_configuration) ~ table_configuration,
+      # then the Cape Breton configuration table
+      !is.na(cb_table_configuration) ~ cb_table_configuration,
+      .default = NA
+    )
   )
 
 # Check for any final NAs
@@ -493,7 +514,7 @@ logs <- logs %>%
     too_few = "align_start"
   ) %>%
   # Replace invalid values according to mapping defined previously
-  mutate(across(contains("deployment_attendant_sep"), fix_attendant_str)) %>%
+  mutate(across(contains("deployment_attendant_sep"), fix_attendant_val)) %>%
   # Remove empty strings
   mutate(across(contains("deployment_attendant_sep"), na_if, "")) %>%
   # Reunite separate columns and remove temporary columns
@@ -536,7 +557,7 @@ logs <- logs %>%
     too_few = "align_start"
   ) %>%
   # Replace invalid values according to mapping defined previously
-  mutate(across(contains("retrieval_attendant_sep"), fix_attendant_str)) %>%
+  mutate(across(contains("retrieval_attendant_sep"), fix_attendant_val)) %>%
   # Remove empty strings
   mutate(across(contains("retrieval_attendant_sep"), na_if, "")) %>%
   # Reunite separate columns and remove temporary columns
@@ -807,8 +828,3 @@ sort_unique_vals(logs$secondary_float_type)
 # "14" -------------------------------------------------------------------------
 sort_unique_vals(logs$`14`)
 # TODO: delete
-
-# "37" -------------------------------------------------------------------------
-sort_unique_vals(logs$`37`)
-# TODO: move one existing value into comments section, then delete
-
