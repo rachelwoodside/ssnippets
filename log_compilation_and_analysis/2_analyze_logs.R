@@ -12,7 +12,7 @@ library(readxl)
 library(stringr)
 library(purrr)
 library(tidyr)
-
+library(lubridate)
 
 # Helper functions -------------------------------------------------------------
 prepend_lease_zeroes <- function(lease_num) {
@@ -29,6 +29,8 @@ sort_unique_vals <- function(vec) {
 }
 
 # File import and basic info ---------------------------------------------------
+
+# TODO: Add in option to read in most recent stacked log copy
 
 filename <- here("stacked_logs_2024-04-29.rds")
 
@@ -263,14 +265,14 @@ sort_unique_vals(logs$mooring_type)
 # configuration ----------------------------------------------------------------
 sort_unique_vals(logs$configuration)
 # Fill in "cinderblock" mount_type as "attached to fixed structure" configuration
-# logs <-
-#   logs %>% mutate(
-#     configuration = case_when(
-#       mount_type == "cinder block" |
-#         mount_type == "cinderblock" ~ "attached to fixed structure",
-#       .default = configuration
-#     )
-#   )
+logs <-
+  logs %>% mutate(
+    configuration = case_when(
+      mount_type == "cinder block" |
+        mount_type == "cinderblock" ~ "attached to fixed structure",
+      .default = configuration
+    )
+  )
 
 logs <- logs %>% rename("log_configuration" = configuration)
 
@@ -290,7 +292,7 @@ config_table_data <-
   ) %>%
   mutate(deployment = ymd(deployment))
 
-config_table_join_data <-
+logs <-
   left_join(logs,
             config_table_data,
             by = c("location_description", "deployment"))
@@ -305,12 +307,12 @@ cb_config_table_data <-
   ) %>%
   mutate(deployment = ymd(deployment))
 
-config_table_join_data <-
-  left_join(config_table_join_data,
+logs <-
+  left_join(logs,
             cb_config_table_data,
             by = c("location_description", "deployment"))
 
-colnames(config_table_join_data)
+colnames(logs)
 
 # Check if any configuration data is not filled by the logs or the config table
 missing_any_config <- config_table_join_data %>%
@@ -318,12 +320,51 @@ missing_any_config <- config_table_join_data %>%
            is.na(config_table_join_data$table_configuration) &
            is.na(config_table_join_data$cb_table_configuration)) %>%
   select(location_description, deployment, log_configuration, table_configuration, cb_table_configuration)
-# TODO: Review log entries with no configuration data
 
-# TODO: Consider using right join to check for entries in the config table
+# TODO? Consider using right join to check for entries in the config table
 # that are missing from the logs
 
-# TODO: Merge configuration data into a single column
+# Check if any columns have more than one configuration column filled in
+logs <-
+  logs %>% mutate(config_count = (
+    as.numeric(!is.na(log_configuration)) + 
+      as.numeric(!is.na(table_configuration)) + 
+      as.numeric(!is.na(cb_table_configuration))
+  ))
+
+duplicate_config_logs <- logs %>% filter(config_count > 1) %>% select(location_description, deployment, log_configuration, table_configuration, cb_table_configuration)
+
+# Confirm that for columns with more than one configuration recorded, 
+# the records match
+# Since we only have two of the columns filled for any given row, this simple
+# check works. Something more would be necessary for checking across all three 
+# columns while discounting NA values
+duplicate_config_logs %>% filter(
+  !(log_configuration == table_configuration |
+    log_configuration == cb_table_configuration |
+    table_configuration == cb_table_configuration)
+)
+
+# Merge configuration data into a single column
+# Since the duplicate config entry values all match, we can simply take the 
+# first value that is not NA out of all of the columns
+logs <-
+  logs %>% mutate(configuration = case_when(!is.na(log_configuration) ~ log_configuration, # prioritize log configuration
+                                             !is.na(table_configuration) ~ table_configuration, # then config table
+                                             !is.na(cb_table_configuration) ~ cb_table_configuration, # then CB config table
+                                             .default = NA)  
+  )
+
+# Check for any final NAs
+logs %>% filter(is.na(configuration)) %>% distinct(location_description, deployment)
+# NOTE: there are some in the dataset as of 2024-05-09 
+# due to some required updates to the logs and some partially implemented
+# station name changes
+
+# Clean up temporary columns
+colnames(logs)
+logs <- logs %>% select(!c(log_configuration, table_configuration, cb_table_configuration, config_count))
+colnames(logs)
 
 # acoustic_release -------------------------------------------------------------
 sort_unique_vals(logs$acoustic_release)
@@ -340,104 +381,180 @@ logs %>% filter(surface_buoy == "Mounted to oyster cage")
 # check for rows missing surface_buoy values
 any(is.na(logs$surface_buoy))
 
-# CODE REVIEW FEEDBACK ENDS AROUND HERE ----------------------------------------
+# deployment_attendant and retrieval_attendant cleanup prep --------------------
+# Examine all attendant values
+all_attendant_vals <- sort(unique(c(logs$deployment_attendant, logs$retrieval_attendant)))
+all_attendant_vals <-
+  all_attendant_vals %>%
+  lapply(str_split_1, pattern = ",| & | &|/|(and)") %>%
+  unlist %>%
+  str_remove(pattern = "\\.") %>%
+  trimws %>%
+  sort_unique_vals
+all_attendant_vals
+
+# Define alternative naming identified in manual examination of attendant vals
+albert_spears_alts <- c("Albert")
+betty_roethlisberger_alts <-
+  c("betty",
+    "Betty",
+    "Betty Roethlsiberger",
+    "Betty Roethsisberger")
+brett_savoury_alts <- c("Brett", "Brett Savoury", "Bretty Savoury")
+david_burns_alts <- c("D Burns")
+danny_rowe_alts <-
+  c("Dan Rowe", "danny", "Danny", "Danny R", "DannyR")
+david_cook_alts <- c("D Cook")
+innovative_fisheries_alts <- c("Innovative crew")
+jamie_warford_alts <- c("Jaime Warford")
+josh_hatt_alts <- c("J Hatt")
+kate_richardson_alts <- c("K Richardson")
+kiersten_watson_alts <-
+  c("Kiersten", "Kiersten (string didn't surface for Leeway)")
+leeway_alts <-
+  c(
+    "leeway crew",
+    "Leeway crew",
+    "Leeway Crew",
+    "leeway marine",
+    "Leeway marine",
+    "Leeway Marine Crew"
+  )
+matthew_hatcher_alts <- c("M Hatcher", "Matt Hatcher", "MHatcher")
+mark_decker_alts <- c("mark", "Mark")
+michelle_plamondon_alts <- c("michelle", "Michelle")
+scott_hatcher_alts <- c("S Hatcher", "SHatcher")
+timothy_dada_alts <- c("Tim D", "Tim Dada", "Timpthy Dada")
+toby_balch_alts <- c("T Balch")
+todd_mosher_alts <- c("T Mosher")
+will_rowe_alts <- c("will", "Will")
+
+# Define helper functions
+
+# Replace values by matching correct naming to alternative names
+fix_attendant_val <- function(attendant_val) {
+  attendant_val = case_when(
+    attendant_val %in% albert_spears_alts ~ "Albert Spears",
+    attendant_val %in% betty_roethlisberger_alts ~ "Betty Roethlisberger",
+    attendant_val %in% brett_savoury_alts ~ "Brett Savoury",
+    attendant_val %in% david_burns_alts ~ "David Burns",
+    attendant_val %in% danny_rowe_alts ~ "Danny Rowe",
+    attendant_val %in% david_cook_alts ~ "David Cook",
+    attendant_val %in% innovative_fisheries_alts ~ "Innovative Fisheries",
+    attendant_val %in% jamie_warford_alts ~ "Jamie Warford",
+    attendant_val %in% josh_hatt_alts ~ "Josh Hatt",
+    attendant_val %in% kate_richardson_alts ~ "Kate Richardson",
+    attendant_val %in% kiersten_watson_alts ~ "Kiersten Watson",
+    attendant_val %in% leeway_alts ~ "Leeway Marine",
+    attendant_val %in% matthew_hatcher_alts ~ "Matthew Hatcher",
+    attendant_val %in% mark_decker_alts ~ "Mark Decker",
+    attendant_val %in% michelle_plamondon_alts ~ "Michelle Plamondon",
+    attendant_val %in% scott_hatcher_alts ~ "Scott Hatcher",
+    attendant_val %in% timothy_dada_alts ~ "Timothy Dada",
+    attendant_val %in% toby_balch_alts ~ "Toby Balch",
+    attendant_val %in% todd_mosher_alts ~ "Todd Mosher",
+    attendant_val %in% will_rowe_alts ~ "Will Rowe",
+    .default = attendant_val
+  )
+}
+
+# Set all delimiters to commas
+standardize_delimiter <- function(attendant_str) {
+  punctuation_replacement_regex <-
+    regex(
+      "[:blank:]+&[:blank:]*|[:blank:]*/[:blank:]*|[:blank:]*and[:blank:]*|[:blank:]*,[:blank:]*"
+    )
+  attendant_str %>%
+    str_remove_all("\\.") %>%
+    str_replace_all(pattern = punctuation_replacement_regex, replacement = ",")
+}
+
+# TODO? Add function to alphabetically sort attendant names within column?
+# Looked into this initially but seemed overcomplicated compared to the value
+# added
 
 # deployment_attendant ---------------------------------------------------------
-# TODO: Clean up and standardize deployment attendant names
-sort_unique_vals(logs$deployment_attendant)
-depl_att_vals <- count(logs %>% filter(!is.na(deployment_attendant)))
-depl_att_nas <- count(logs %>% filter(is.na(deployment_attendant)))
-message(glue("Deployment Attendant Values: {depl_att_vals}"))
-message(glue("Deployment Attendant NAs: {depl_att_nas}"))
+# sort_unique_vals(logs$deployment_attendant)
+# depl_att_vals <- count(logs %>% filter(!is.na(deployment_attendant)))
+# depl_att_nas <- count(logs %>% filter(is.na(deployment_attendant)))
+# message(glue("Deployment Attendant Values: {depl_att_vals}"))
+# message(glue("Deployment Attendant NAs: {depl_att_nas}"))
+
+# Clean up deployment attendant column
+logs <- logs %>%
+  # Standardize delimiter
+  mutate(deployment_attendant_sep = 
+           standardize_delimiter(deployment_attendant)) %>%
+  # Separate into columns for each individual attendant
+  separate_wider_delim(
+    deployment_attendant_sep,
+    delim = ",",
+    names_sep = "_",
+    too_few = "align_start"
+  ) %>%
+  # Replace invalid values according to mapping defined previously
+  mutate(across(contains("deployment_attendant_sep"), fix_attendant_str)) %>%
+  # Remove empty strings
+  mutate(across(contains("deployment_attendant_sep"), na_if, "")) %>%
+  # Reunite separate columns and remove temporary columns
+  unite(
+    col = "deployment_attendant",
+    contains("deployment_attendant_sep"),
+    sep = ", ",
+    remove = TRUE,
+    na.rm = TRUE
+  )
 
 sort_unique_vals(logs$deployment_attendant)
-depl_attendant_text_len <- unlist(lapply(logs$deployment_attendant, str_length))
-max(depl_attendant_text_len, na.rm=TRUE)
+  
+# Check deployment_attendant text length
+sort_unique_vals(logs$deployment_attendant)
+depl_attendant_text_len <-
+  unlist(lapply(logs$deployment_attendant, str_length))
+max(depl_attendant_text_len, na.rm = TRUE)
 
 # retrieval_attendant ----------------------------------------------------------
-# TODO: Clean up and standardize retrieval attendant names
 sort_unique_vals(logs$retrieval_attendant)
 # Retrieval attendant as "Line 3, East end"?
 #logs %>% filter(retrieval_attendant == "Line 3, East end")
-retrieval_att_vals <-
-  count(logs %>% filter(!is.na(retrieval_attendant)))
-retrieval_att_nas <-
-  count(logs %>% filter(is.na(retrieval_attendant)))
-message(glue("Retrieval Attendant Values: {retrieval_att_vals}"))
-message(glue("Retrieval Attendant NAs: {retrieval_att_nas}"))
+# retrieval_att_vals <-
+#   count(logs %>% filter(!is.na(retrieval_attendant)))
+# retrieval_att_nas <-
+#   count(logs %>% filter(is.na(retrieval_attendant)))
+# message(glue("Retrieval Attendant Values: {retrieval_att_vals}"))
+# message(glue("Retrieval Attendant NAs: {retrieval_att_nas}"))
 
-
-# Examine all attendant values
-all_attendant_vals <- sort(unique(c(logs$deployment_attendant, logs$retrieval_attendant)))
-all_attendant_vals <- all_attendant_vals %>% lapply(str_split_1, pattern=",|&|/|(and)") %>% unlist %>% trimws %>% sort_unique_vals
-all_attendant_vals
-
-albert_spears_alternatives <- c("Albert")
-
-
-identified_individual_attendants <-
-  c(
-    "Albert Spears", # need to add last name
-    "Aleasha Boudreau",
-    "Andrew Bagnall",
-    "Bear River", # check relationship with innovative fisheries
-    "Betty Roethlisberger", # need to add last name, manage typos
-    "Blair Golden",
-    "Brett Savoury", # need to add last name, manage nicknames
-    "Brian Fortune",
-    "Brian Lewis",
-    "Bruce Hatcher",
-    "Carol Ann",
-    "CMAR",
-    "Connors Diving",
-    "Corey Bowen",
-    "David Burns", # need to expand first initial
-    "Danny Rowe", # need to add last name, expand first initial, expand last initial, manage nicknames
-    "Danielle St. Louis",
-    "David Cook", # need to expand first initial, manage nicknames?
-    "Dave Macneil", # same as Dave McNeill? maybe check occurrence of each in logs
-    "Duncan Bates",
-    "Esha", # last name anywhere?
-    "Evan", # last name anywhere?
-    "Gregor Reid",
-    "Innovative Fisheries", # group with innovative crew
-    "Isabelle Trembley",
-    "Jamie Warford", # check for typos
-    "Jamie Sangster",
-    "Jesse Fortune",
-    "Jessica Feindel",
-    "Joe Erly",
-    "Josh Hatt", # need to expand first initial
-    "Karen Campbell",
-    "Kate Richardson", # need to expand first initial
-    "Kiersten Watson", # confirm this is CMAR kiersten and parse out spare info
-    "L Clancey", # find full first name and expand?
-    "Leeway Marine", # group with leeway crew and leeway marine crew
-    "Matthew Hatcher", # need to expand first initial, manage nicknames
-    "Mark Decker", # need to add last name
-    "Matt King",
-    "Matthew Theriault",
-    "Merinov",
-    "Michelle Plamondon", # need to add last name
-    "Mike (B&S)", # include the b&s for clarity?
-    "Nathaniel Feindel",
-    "Nick Nickerson",
-    "Paul Budreski",
-    "Phil Docker",
-    "Robin Stuart",
-    "Sam Pascoe (B&s)",
-    "Scott Hatcher", # need to expand first initial
-    "Stephen Macintosh",
-    "Timothy Dada", # need to expand first initial, manage typos, manage nicknames
-    "Toby Balch", # need to expand first initial
-    "Todd Mosher", # need to expand first initial
-    "Trevor Munroe",
-    "Troy (B&S)",
-    "Vicki Swan",
-    "Will Rowe" # need to add last name
+# Clean up retrieval attendant column
+logs <- logs %>%
+  # Standardize delimiter
+  mutate(retrieval_attendant_sep = standardize_delimiter(retrieval_attendant)) %>%
+  # Separate into columns for each individual attendant
+  separate_wider_delim(
+    retrieval_attendant_sep,
+    delim = ",",
+    names_sep = "_",
+    too_few = "align_start"
+  ) %>%
+  # Replace invalid values according to mapping defined previously
+  mutate(across(contains("retrieval_attendant_sep"), fix_attendant_str)) %>%
+  # Remove empty strings
+  mutate(across(contains("retrieval_attendant_sep"), na_if, "")) %>%
+  # Reunite separate columns and remove temporary columns
+  unite(
+    col = "retrieval_attendant",
+    contains("retrieval_attendant_sep"),
+    sep = ", ",
+    remove = TRUE,
+    na.rm = TRUE
   )
-length(identified_individual_attendants)
 
+sort_unique_vals(logs$retrieval_attendant)
+
+# Check retrieval_attendant text length
+sort_unique_vals(logs$retrieval_attendant)
+retrieval_attendant_text_len <-
+  unlist(lapply(logs$retrieval_attendant, str_length))
+max(retrieval_attendant_text_len, na.rm = TRUE)
 
 # comments ---------------------------------------------------------------------
 # each of these is likely unique
