@@ -701,7 +701,7 @@ first_sensor_under_float_nas <- count(logs %>% filter(is.na(verified_measurement
 message(glue("First Sensor Under Float Measurement Values: {first_sensor_under_float_vals}"))
 message(glue("First Sensor Under Float Measurement NAs: {first_sensor_under_float_nas}"))
 
-# first sensor under float measurements to investigate -------------------------
+# first sensor under float measurements to investigate
 # TODO: What values for this are reasonable? More than 25?
 logs %>% filter(verified_measurement_below_origin_first_sensor_under_float > 25)
 
@@ -798,19 +798,6 @@ sort_unique_vals(logs$dist_to_shore)
 
 # substrate -- salmon rivers ---------------------------------------------------
 sort_unique_vals(logs$substrate)
-
-
-# TODO: Consider whether these separate notes columns are useful i.e. should
-# they be standard for CMP?
-# deployment_notes -------------------------------------------------------------
-sort_unique_vals(logs$deployment_notes)
-
-# retrieval_notes --------------------------------------------------------------
-sort_unique_vals(logs$retrieval_notes)
-
-# data_processor_notes ---------------------------------------------------------
-
-# data_handler_notes -----------------------------------------------------------
 
 # depth -- depth of what?? -----------------------------------------------------
 # TODO: Check where this comes from?
