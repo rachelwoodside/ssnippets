@@ -480,15 +480,17 @@ sort_unique_vals(logs$acoustic_release)
 logs <-
   logs %>% mutate(acoustic_release = tolower(str_sub(acoustic_release, 1, 1)))
 sort_unique_vals(logs$acoustic_release)
-# check for rows missing acoustic_release values
-any(is.na(logs$acoustic_release))
 
 # surface_buoy -----------------------------------------------------------------
 sort_unique_vals(logs$surface_buoy)
-# TODO: Check "mounted to oyster cage" value for surface buoy
-logs %>% filter(surface_buoy == "Mounted to oyster cage")
-# check for rows missing surface_buoy values
-any(is.na(logs$surface_buoy))
+# Narrow down to Y/N values
+logs <- logs %>% 
+  mutate(surface_buoy = tolower(surface_buoy)) %>%
+  mutate(surface_buoy = case_when(surface_buoy == "mounted to oyster cage" ~ NA,
+                                  surface_buoy == "at high tide" ~ NA,
+                                  .default = surface_buoy)) %>%
+  mutate(surface_buoy = tolower(str_sub(surface_buoy, 1, 1)))
+sort_unique_vals(logs$surface_buoy)
 
 # deployment_attendant and retrieval_attendant cleanup prep --------------------
 # Examine all attendant values
