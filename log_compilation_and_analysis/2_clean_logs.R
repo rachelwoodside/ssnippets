@@ -28,15 +28,116 @@ sort_unique_vals <- function(vec) {
   sort(unique(vec), na.last = FALSE)
 }
 
+# Set all delimiters to commas
+standardize_delimiter <- function(attendant_str) {
+  punctuation_replacement_regex <-
+    regex(
+      "[:blank:]+&[:blank:]*|[:blank:]*/[:blank:]*|[:blank:]*and[:blank:]*|[:blank:]*,[:blank:]*"
+    )
+  attendant_str %>%
+    str_remove_all("\\.") %>%
+    str_replace_all(pattern = punctuation_replacement_regex, replacement = ",")
+}
+
+# TODO: Extract these into a separate file, mapping to their correct standard
+# names, to be consumed by the helper function immediately below
+albert_spears_alts <- c("Albert")
+betty_roethlisberger_alts <-
+  c("betty",
+    "Betty",
+    "Betty Roethlsiberger",
+    "Betty Roethsisberger")
+brett_savoury_alts <- c("Brett", "Brett Savoury", "Bretty Savoury")
+david_burns_alts <- c("D Burns")
+danny_rowe_alts <-
+  c("Dan Rowe", "danny", "Danny", "Danny R", "DannyR")
+david_cook_alts <- c("D Cook")
+innovative_fisheries_alts <- c("Innovative crew")
+jamie_warford_alts <- c("Jaime Warford")
+josh_hatt_alts <- c("J Hatt")
+kate_richardson_alts <- c("K Richardson")
+kiersten_watson_alts <-
+  c("Kiersten", "Kiersten (string didn't surface for Leeway)")
+leeway_alts <-
+  c(
+    "leeway crew",
+    "Leeway crew",
+    "Leeway Crew",
+    "leeway marine",
+    "Leeway marine",
+    "Leeway Marine Crew"
+  )
+matthew_hatcher_alts <- c("M Hatcher", "Matt Hatcher", "MHatcher")
+mark_decker_alts <- c("mark", "Mark")
+michelle_plamondon_alts <- c("michelle", "Michelle")
+scott_hatcher_alts <- c("S Hatcher", "SHatcher")
+timothy_dada_alts <- c("Tim D", "Tim Dada", "Timpthy Dada")
+toby_balch_alts <- c("T Balch")
+todd_mosher_alts <- c("T Mosher")
+will_rowe_alts <- c("will", "Will")
+
+# TODO: Update this function to read in a file of alternative names which are
+# mapped to the standard names
+# Replace values by matching correct naming to alternative names
+fix_attendant_val <- function(attendant_val) {
+  attendant_val = case_when(
+    attendant_val %in% albert_spears_alts ~ "Albert Spears",
+    attendant_val %in% betty_roethlisberger_alts ~ "Betty Roethlisberger",
+    attendant_val %in% brett_savoury_alts ~ "Brett Savoury",
+    attendant_val %in% david_burns_alts ~ "David Burns",
+    attendant_val %in% danny_rowe_alts ~ "Danny Rowe",
+    attendant_val %in% david_cook_alts ~ "David Cook",
+    attendant_val %in% innovative_fisheries_alts ~ "Innovative Fisheries",
+    attendant_val %in% jamie_warford_alts ~ "Jamie Warford",
+    attendant_val %in% josh_hatt_alts ~ "Josh Hatt",
+    attendant_val %in% kate_richardson_alts ~ "Kate Richardson",
+    attendant_val %in% kiersten_watson_alts ~ "Kiersten Watson",
+    attendant_val %in% leeway_alts ~ "Leeway Marine",
+    attendant_val %in% matthew_hatcher_alts ~ "Matthew Hatcher",
+    attendant_val %in% mark_decker_alts ~ "Mark Decker",
+    attendant_val %in% michelle_plamondon_alts ~ "Michelle Plamondon",
+    attendant_val %in% scott_hatcher_alts ~ "Scott Hatcher",
+    attendant_val %in% timothy_dada_alts ~ "Timothy Dada",
+    attendant_val %in% toby_balch_alts ~ "Toby Balch",
+    attendant_val %in% todd_mosher_alts ~ "Todd Mosher",
+    attendant_val %in% will_rowe_alts ~ "Will Rowe",
+    .default = attendant_val
+  )
+}
+
 # File import and basic info ---------------------------------------------------
 
 # TODO: Add in option to read in most recent stacked log copy
-
 filename <- here("stacked_logs_2024-04-29.rds")
-
 logs <- readRDS(filename)
 
-col_list <- colnames(logs)
+# Read in config table data
+config_table_file_path <-
+  "R:/tracking_sheets/water_quality_configuration_table.xlsx"
+cb_config_table_file_path <-
+  "R:/tracking_sheets/water_quality_cape_breton_configuration.xlsx"
+
+config_table_data <-
+  read_excel(config_table_file_path, na = c("", "n/a", "N/A", "NA")) %>%
+  select(Station_Name, Depl_Date, Configuration) %>%
+  rename(
+    "location_description" = Station_Name,
+    "deployment" = Depl_Date,
+    "table_configuration" = Configuration
+  ) %>%
+  mutate(deployment = ymd(deployment))
+
+cb_config_table_data <-
+  read_excel(cb_config_table_file_path, na = c("", "n/a", "N/A", "NA")) %>%
+  select(Station_Name, Depl_Date, Configuration) %>%
+  rename(
+    "location_description" = Station_Name,
+    "deployment" = Depl_Date,
+    "cb_table_configuration" = Configuration
+  ) %>%
+  mutate(deployment = ymd(deployment))
+
+# TODO: Read in attendant list file once created (see TODOs above)
 
 # deployment_waterbody ---------------------------------------------------------
 sort_unique_vals(logs$deployment_waterbody)
@@ -276,42 +377,15 @@ logs <-
 
 logs <- logs %>% rename("log_configuration" = configuration)
 
-# Fill in NAs based on configuration table file (and CB config table file)?
-config_table_file_path <-
-  "R:/tracking_sheets/water_quality_configuration_table.xlsx"
-cb_config_table_file_path <-
-  "R:/tracking_sheets/water_quality_cape_breton_configuration.xlsx"
-
-config_table_data <-
-  read_excel(config_table_file_path, na = c("", "n/a", "N/A", "NA")) %>%
-  select(Station_Name, Depl_Date, Configuration) %>%
-  rename(
-    "location_description" = Station_Name,
-    "deployment" = Depl_Date,
-    "table_configuration" = Configuration
-  ) %>%
-  mutate(deployment = ymd(deployment))
-
+# Pull in configuration and cb configuration table data
 logs <-
   left_join(logs,
             config_table_data,
             by = c("location_description", "deployment"))
-
-cb_config_table_data <-
-  read_excel(cb_config_table_file_path, na = c("", "n/a", "N/A", "NA")) %>%
-  select(Station_Name, Depl_Date, Configuration) %>%
-  rename(
-    "location_description" = Station_Name,
-    "deployment" = Depl_Date,
-    "cb_table_configuration" = Configuration
-  ) %>%
-  mutate(deployment = ymd(deployment))
-
 logs <-
   left_join(logs,
             cb_config_table_data,
             by = c("location_description", "deployment"))
-
 colnames(logs)
 
 # Check if any configuration data is not filled by the logs or the config table
@@ -413,82 +487,6 @@ all_attendant_vals <-
   trimws %>%
   sort_unique_vals
 all_attendant_vals
-
-# Define alternative naming identified in manual examination of attendant vals
-albert_spears_alts <- c("Albert")
-betty_roethlisberger_alts <-
-  c("betty",
-    "Betty",
-    "Betty Roethlsiberger",
-    "Betty Roethsisberger")
-brett_savoury_alts <- c("Brett", "Brett Savoury", "Bretty Savoury")
-david_burns_alts <- c("D Burns")
-danny_rowe_alts <-
-  c("Dan Rowe", "danny", "Danny", "Danny R", "DannyR")
-david_cook_alts <- c("D Cook")
-innovative_fisheries_alts <- c("Innovative crew")
-jamie_warford_alts <- c("Jaime Warford")
-josh_hatt_alts <- c("J Hatt")
-kate_richardson_alts <- c("K Richardson")
-kiersten_watson_alts <-
-  c("Kiersten", "Kiersten (string didn't surface for Leeway)")
-leeway_alts <-
-  c(
-    "leeway crew",
-    "Leeway crew",
-    "Leeway Crew",
-    "leeway marine",
-    "Leeway marine",
-    "Leeway Marine Crew"
-  )
-matthew_hatcher_alts <- c("M Hatcher", "Matt Hatcher", "MHatcher")
-mark_decker_alts <- c("mark", "Mark")
-michelle_plamondon_alts <- c("michelle", "Michelle")
-scott_hatcher_alts <- c("S Hatcher", "SHatcher")
-timothy_dada_alts <- c("Tim D", "Tim Dada", "Timpthy Dada")
-toby_balch_alts <- c("T Balch")
-todd_mosher_alts <- c("T Mosher")
-will_rowe_alts <- c("will", "Will")
-
-# Define helper functions
-
-# Replace values by matching correct naming to alternative names
-fix_attendant_val <- function(attendant_val) {
-  attendant_val = case_when(
-    attendant_val %in% albert_spears_alts ~ "Albert Spears",
-    attendant_val %in% betty_roethlisberger_alts ~ "Betty Roethlisberger",
-    attendant_val %in% brett_savoury_alts ~ "Brett Savoury",
-    attendant_val %in% david_burns_alts ~ "David Burns",
-    attendant_val %in% danny_rowe_alts ~ "Danny Rowe",
-    attendant_val %in% david_cook_alts ~ "David Cook",
-    attendant_val %in% innovative_fisheries_alts ~ "Innovative Fisheries",
-    attendant_val %in% jamie_warford_alts ~ "Jamie Warford",
-    attendant_val %in% josh_hatt_alts ~ "Josh Hatt",
-    attendant_val %in% kate_richardson_alts ~ "Kate Richardson",
-    attendant_val %in% kiersten_watson_alts ~ "Kiersten Watson",
-    attendant_val %in% leeway_alts ~ "Leeway Marine",
-    attendant_val %in% matthew_hatcher_alts ~ "Matthew Hatcher",
-    attendant_val %in% mark_decker_alts ~ "Mark Decker",
-    attendant_val %in% michelle_plamondon_alts ~ "Michelle Plamondon",
-    attendant_val %in% scott_hatcher_alts ~ "Scott Hatcher",
-    attendant_val %in% timothy_dada_alts ~ "Timothy Dada",
-    attendant_val %in% toby_balch_alts ~ "Toby Balch",
-    attendant_val %in% todd_mosher_alts ~ "Todd Mosher",
-    attendant_val %in% will_rowe_alts ~ "Will Rowe",
-    .default = attendant_val
-  )
-}
-
-# Set all delimiters to commas
-standardize_delimiter <- function(attendant_str) {
-  punctuation_replacement_regex <-
-    regex(
-      "[:blank:]+&[:blank:]*|[:blank:]*/[:blank:]*|[:blank:]*and[:blank:]*|[:blank:]*,[:blank:]*"
-    )
-  attendant_str %>%
-    str_remove_all("\\.") %>%
-    str_replace_all(pattern = punctuation_replacement_regex, replacement = ",")
-}
 
 # TODO? Add function to alphabetically sort attendant names within column?
 # Looked into this initially but seemed overcomplicated compared to the value
@@ -824,7 +822,3 @@ sort_unique_vals(logs$depth_of_water_m)
 # secondary_float_type ---------------------------------------------------------
 # TODO: Check which log this is coming from - this matches new log format
 sort_unique_vals(logs$secondary_float_type)
-
-# "14" -------------------------------------------------------------------------
-sort_unique_vals(logs$`14`)
-# TODO: delete
