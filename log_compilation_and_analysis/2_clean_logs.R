@@ -852,8 +852,22 @@ sort_unique_vals(logs$photos_taken)
 
 # anchor_type ------------------------------------------------------------------
 sort_unique_vals(logs$anchor_type)
-logs <- logs %>% mutate(anchor_type = tolower(anchor_type))
+# Standardize punctuation and numerical representations
+logs <- logs %>%
+  mutate(anchor_type = tolower(anchor_type)) %>%
+  mutate(anchor_type = str_remove(anchor_type, pattern = ",")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "-", replacement = " ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^one ", replacement = "1 ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^two ", replacement = "2 ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^three ", replacement = "3 ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^four ", replacement = "4 ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = " plus ", replacement = " + "))
+
+
 sort_unique_vals(logs$anchor_type)
+
+
+# Check length of anchor_type text
 anchor_type_text_len <- unlist(lapply(logs$anchor_type, str_length))
 max(anchor_type_text_len, na.rm=TRUE)
 
