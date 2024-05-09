@@ -12,7 +12,7 @@ library(readxl)
 library(stringr)
 library(purrr)
 library(tidyr)
-
+library(lubridate)
 
 # Helper functions -------------------------------------------------------------
 prepend_lease_zeroes <- function(lease_num) {
@@ -292,7 +292,7 @@ config_table_data <-
   ) %>%
   mutate(deployment = ymd(deployment))
 
-config_table_join_data <-
+logs <-
   left_join(logs,
             config_table_data,
             by = c("location_description", "deployment"))
@@ -307,12 +307,12 @@ cb_config_table_data <-
   ) %>%
   mutate(deployment = ymd(deployment))
 
-config_table_join_data <-
-  left_join(config_table_join_data,
+logs <-
+  left_join(logs,
             cb_config_table_data,
             by = c("location_description", "deployment"))
 
-colnames(config_table_join_data)
+colnames(logs)
 
 # Check if any configuration data is not filled by the logs or the config table
 missing_any_config <- config_table_join_data %>%
@@ -320,12 +320,51 @@ missing_any_config <- config_table_join_data %>%
            is.na(config_table_join_data$table_configuration) &
            is.na(config_table_join_data$cb_table_configuration)) %>%
   select(location_description, deployment, log_configuration, table_configuration, cb_table_configuration)
-# TODO: Review log entries with no configuration data
 
-# TODO: Consider using right join to check for entries in the config table
+# TODO? Consider using right join to check for entries in the config table
 # that are missing from the logs
 
-# TODO: Merge configuration data into a single column
+# Check if any columns have more than one configuration column filled in
+logs <-
+  logs %>% mutate(config_count = (
+    as.numeric(!is.na(log_configuration)) + 
+      as.numeric(!is.na(table_configuration)) + 
+      as.numeric(!is.na(cb_table_configuration))
+  ))
+
+duplicate_config_logs <- logs %>% filter(config_count > 1) %>% select(location_description, deployment, log_configuration, table_configuration, cb_table_configuration)
+
+# Confirm that for columns with more than one configuration recorded, 
+# the records match
+# Since we only have two of the columns filled for any given row, this simple
+# check works. Something more would be necessary for checking across all three 
+# columns while discounting NA values
+duplicate_config_logs %>% filter(
+  !(log_configuration == table_configuration |
+    log_configuration == cb_table_configuration |
+    table_configuration == cb_table_configuration)
+)
+
+# Merge configuration data into a single column
+# Since the duplicate config entry values all match, we can simply take the 
+# first value that is not NA out of all of the columns
+logs <-
+  logs %>% mutate(configuration = case_when(!is.na(log_configuration) ~ log_configuration, # prioritize log configuration
+                                             !is.na(table_configuration) ~ table_configuration, # then config table
+                                             !is.na(cb_table_configuration) ~ cb_table_configuration, # then CB config table
+                                             .default = NA)  
+  )
+
+# Check for any final NAs
+logs %>% filter(is.na(configuration)) %>% distinct(location_description, deployment)
+# NOTE: there are some in the dataset as of 2024-05-09 
+# due to some required updates to the logs and some partially implemented
+# station name changes
+
+# Clean up temporary columns
+colnames(logs)
+logs <- logs %>% select(!c(log_configuration, table_configuration, cb_table_configuration, config_count))
+colnames(logs)
 
 # acoustic_release -------------------------------------------------------------
 sort_unique_vals(logs$acoustic_release)
