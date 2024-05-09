@@ -139,6 +139,14 @@ cb_config_table_data <-
 
 # TODO: Read in attendant list file once created (see TODOs above)
 
+# Read in ODP Lease List
+odp_lease_api_url <- "https://data.novascotia.ca/resource/h57h-p9mm.csv"
+odp_lease_data <- read.socrata(odp_lease_api_url)
+odp_lease_data <-
+  odp_lease_data %>% mutate(license_le = as.character(license_le))
+odp_lease_data$license_le <-
+  unlist(lapply(odp_lease_data$license_le, prepend_lease_zeroes))
+
 # deployment_waterbody ---------------------------------------------------------
 sort_unique_vals(logs$deployment_waterbody)
 # check for rows missing waterbody values
@@ -161,13 +169,6 @@ sort_unique_vals(logs$lease)
 logs$lease <- unlist(lapply(logs$lease, prepend_lease_zeroes))
 
 # Check if lease values are valid based on ODP dataset
-odp_lease_api_url <- "https://data.novascotia.ca/resource/h57h-p9mm.csv"
-odp_lease_data <- read.socrata(odp_lease_api_url)
-odp_lease_data <-
-  odp_lease_data %>% mutate(license_le = as.character(license_le))
-odp_lease_data$license_le <-
-  unlist(lapply(odp_lease_data$license_le, prepend_lease_zeroes))
-
 # TODO: add split on "/" character (or others?) for checking multi-lease stations
 lease_crosscheck <- setdiff(logs$lease, odp_lease_data$license_le)
 print(lease_crosscheck)
