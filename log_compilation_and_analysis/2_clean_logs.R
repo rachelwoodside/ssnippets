@@ -823,3 +823,9 @@ sort_unique_vals(logs$depth_of_water_m)
 # secondary_float_type ---------------------------------------------------------
 # TODO: Check which log this is coming from - this matches new log format
 sort_unique_vals(logs$secondary_float_type)
+
+# Generate output --------------------------------------------------------------
+
+# Save to RDS with date to avoid having to rerun cleaning code with each
+# log reformatting and analysis
+saveRDS(logs, file=glue("{getwd()}/clean_stacked_logs_{today()}.rds"))
