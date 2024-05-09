@@ -355,7 +355,18 @@ sort_unique_vals(logs$datum)
 # mount_type -------------------------------------------------------------------
 sort_unique_vals(logs$mount_type)
 logs <- logs %>% mutate(mount_type = tolower(mount_type))
-# TODO: Clean up and standardize mount types
+# Clean up and standardize mount types
+sort_unique_vals(logs$mount_type)
+logs <- logs %>% 
+  mutate(mount_type = str_replace(mount_type, pattern = "subsurface", replacement = "sub-surface")) %>%
+  mutate(mount_type = str_replace(mount_type, pattern = "sub surface", replacement = "sub-surface")) %>%
+  mutate(mount_type = str_replace(mount_type, pattern = "float", replacement = "buoy")) %>%
+  mutate(mount_type = str_replace(mount_type, pattern = "buoying", replacement = "floating")) %>%
+  mutate(mount_type = str_replace(mount_type, pattern = "cinderblock", replacement = "cinder block")) %>%
+  mutate(mount_type = str_remove(mount_type, pattern = "on ")) %>%
+  mutate(mount_type = str_remove(mount_type, pattern = " yellow nav")) %>%
+  mutate(mount_type = str_remove(mount_type, pattern = "\\(at high tide\\)"))
+
 sort_unique_vals(logs$mount_type)
 
 # mooring_type -----------------------------------------------------------------
