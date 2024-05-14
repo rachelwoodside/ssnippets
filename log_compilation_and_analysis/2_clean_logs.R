@@ -109,7 +109,7 @@ fix_attendant_val <- function(attendant_val) {
 # File import and basic info ---------------------------------------------------
 
 # TODO: Add in option to read in most recent stacked log copy
-filename <- here("stacked_logs_2024-04-29.rds")
+filename <- here("stacked_logs_2024-05-14.rds")
 logs <- readRDS(filename)
 
 # Read in config table data
@@ -250,8 +250,8 @@ message(glue("No positive deployment longitude values: {positive_depl_longitude_
 any(is.na(logs$logger_longitude))
 any(logs$logger_longitude > 0)
 # identify rows with missing or nonnegative logger_longitude
-nonnegative_or_missing_longitude <-
-  logs %>% filter(is.na(logger_longitude) | logger_longitude > 0)
+#nonnegative_or_missing_longitude <-
+#  logs %>% filter(is.na(logger_longitude) | logger_longitude > 0)
 
 # logger_model -----------------------------------------------------------------
 sort_unique_vals(logs$logger_model)
@@ -328,9 +328,9 @@ sort_unique_vals(logs$logger_model)
 # serial (num) -----------------------------------------------------------------
 sort_unique_vals(logs$serial)
 # check for rows missing serial num
-any(is.na(logs$logger_latitude))
+any(is.na(logs$serial))
 # identify rows with missing serial numbers
-# missing_serial_num <- logs %>% filter(is.na(serial))
+missing_serial_num <- logs %>% filter(is.na(serial))
 
 # Note - serial numbers 3 characters long are DST comp sensors
 # short_serial_nums <- logs %>%
@@ -346,6 +346,8 @@ sort_unique_vals(logs$sensor_depth)
 any(is.na(logs$sensor_depth))
 # identify rows with missing serial numbers
 # missing_sensor_depth <- logs %>% filter(is.na(sensor_depth))
+
+# TODO: Merge depth and depth_of_water_m into this column
 
 # sounding ---------------------------------------------------------------------
 sort_unique_vals(logs$sounding)
@@ -369,9 +371,12 @@ logs <- logs %>%
   mutate(mount_type = str_replace(mount_type, pattern = "float", replacement = "buoy")) %>%
   mutate(mount_type = str_replace(mount_type, pattern = "buoying", replacement = "floating")) %>%
   mutate(mount_type = str_replace(mount_type, pattern = "cinderblock", replacement = "cinder block")) %>%
+  mutate(mount_type = str_replace(mount_type, pattern = "^sub-surface$", replacement = "sub-surface buoy")) %>%
+  mutate(mount_type = str_replace(mount_type, pattern = "oyster cage", replacement = "gear")) %>%
   mutate(mount_type = str_remove(mount_type, pattern = "on ")) %>%
   mutate(mount_type = str_remove(mount_type, pattern = " yellow nav")) %>%
-  mutate(mount_type = str_remove(mount_type, pattern = "\\(at high tide\\)"))
+  mutate(mount_type = str_remove(mount_type, pattern = "\\(at high tide\\)")) %>%
+  mutate(mount_type = trimws(mount_type))
 
 sort_unique_vals(logs$mount_type)
 
@@ -536,7 +541,7 @@ logs <- logs %>%
   # Replace invalid values according to mapping defined previously
   mutate(across(contains("deployment_attendant_sep"), fix_attendant_val)) %>%
   # Remove empty strings
-  mutate(across(contains("deployment_attendant_sep"), na_if, "")) %>%
+  mutate(across(contains("deployment_attendant_sep"), ~ na_if(., ""))) %>%
   # Reunite separate columns and remove temporary columns
   unite(
     col = "deployment_attendant",
@@ -544,10 +549,11 @@ logs <- logs %>%
     sep = ", ",
     remove = TRUE,
     na.rm = TRUE
-  )
+  ) %>%
+  mutate(deployment_attendant = na_if(deployment_attendant, ""))
 
 sort_unique_vals(logs$deployment_attendant)
-  
+
 # Check deployment_attendant text length
 sort_unique_vals(logs$deployment_attendant)
 depl_attendant_text_len <-
@@ -579,7 +585,7 @@ logs <- logs %>%
   # Replace invalid values according to mapping defined previously
   mutate(across(contains("retrieval_attendant_sep"), fix_attendant_val)) %>%
   # Remove empty strings
-  mutate(across(contains("retrieval_attendant_sep"), na_if, "")) %>%
+  mutate(across(contains("retrieval_attendant_sep"), ~ na_if(., ""))) %>%
   # Reunite separate columns and remove temporary columns
   unite(
     col = "retrieval_attendant",
@@ -587,7 +593,8 @@ logs <- logs %>%
     sep = ", ",
     remove = TRUE,
     na.rm = TRUE
-  )
+  ) %>%
+  mutate(retrieval_attendant = na_if(retrieval_attendant, ""))
 
 sort_unique_vals(logs$retrieval_attendant)
 
@@ -896,7 +903,7 @@ logs <- logs %>%
   mutate(anchor_type = str_replace(anchor_type, pattern = " heavy ", replacement = " ")) %>%
   mutate(anchor_type = str_replace(anchor_type, pattern = " steel rotors", replacement = " rotors")) %>%
   mutate(anchor_type = str_replace(anchor_type, pattern = "steel rock", replacement = "rock")) %>%
-  mutate(anchor_type = str_replace(anchor_type, pattern = " steel chain", replacement = " chains")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = " steel chain$", replacement = " chains")) %>%
   mutate(anchor_type = str_replace(anchor_type, pattern = "^steel chains$", replacement = "chains")) %>%
   mutate(anchor_type = str_replace(anchor_type, pattern = "^steel chain$", replacement = "chains")) %>%
   # Correct singular vs plural where necessary
@@ -907,13 +914,14 @@ logs <- logs %>%
   
 sort_unique_vals(logs$anchor_type)
 sort_unique_vals(logs$anchor_weight_in_kg)
+# TODO: Consider whether to trim decimal places for kg
 
 colnames(logs)
 
 
 # Check length of anchor_type text
 anchor_type_text_len <- unlist(lapply(logs$anchor_type, str_length))
-max(anchor_type_text_len, na.rm=TRUE)
+max(anchor_type_text_len, na.rm = TRUE)
 
 # float_type -------------------------------------------------------------------
 sort_unique_vals(logs$float_type)
@@ -935,14 +943,6 @@ sort_unique_vals(logs$dist_to_shore)
 
 # substrate -- salmon rivers ---------------------------------------------------
 sort_unique_vals(logs$substrate)
-
-# depth -- depth of what?? -----------------------------------------------------
-# TODO: Check where this comes from?
-sort_unique_vals(logs$depth)
-
-# depth_of_water_m -------------------------------------------------------------
-# TODO: Check which log this comes from - salmon rivers?
-sort_unique_vals(logs$depth_of_water_m)
 
 # secondary_float_type ---------------------------------------------------------
 # TODO: Check which log this is coming from - this matches new log format
