@@ -113,7 +113,6 @@ rename_key <-
   c(
     "distance_from_top_of_float_to_origin_first_sensor" = "distance_from_top_of_float_to_origin_first_sensor_36",
     "distance_from_top_of_float_to_origin_first_sensor_1" = "distance_from_top_of_float_to_origin_first_sensor_37",
-    "depth" = "depth_maybe",
     "data_processor_notes" = "data_processor_note",
     "time_of_deployment" = "6",
     "retrieval_time" = "8",
