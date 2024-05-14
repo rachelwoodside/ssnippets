@@ -975,10 +975,16 @@ sort_unique_vals(logs$float_type)
 
 # distance_from_top_of_float_to_origin_first_sensor
 # and distance_from_top_of_float_to_origin_first_sensor_1 ----------------------
+sort_unique_vals(logs$distance_from_top_of_float_to_origin_first_sensor)
+
+# Drop empty distance_from_top_of_float_to_origin_first_sensor_1
+sort_unique_vals(logs$distance_from_top_of_float_to_origin_first_sensor_1)
+logs <- logs %>% select(!distance_from_top_of_float_to_origin_first_sensor_1)
+colnames(logs)
 
 # deployment_time -- salmon rivers ---------------------------------------------
 sort_unique_vals(logs$deployment_time)
-# TODO: Potentially group in with time_of_deployment (see log_compiler.R)
+# TODO: Potentially group in with time_of_deployment
 
 # retrieval_time -- salmon rivers ----------------------------------------------
 sort_unique_vals(logs$retrieval_time)
@@ -990,8 +996,9 @@ sort_unique_vals(logs$dist_to_shore)
 sort_unique_vals(logs$substrate)
 
 # secondary_float_type ---------------------------------------------------------
-# TODO: Check which log this is coming from - this matches new log format
 sort_unique_vals(logs$secondary_float_type)
+# Identify log this is coming from
+# logs %>% filter(secondary_float_type == "small 8\" vinyl") %>% distinct(location_description, deployment)
 
 # Generate output --------------------------------------------------------------
 
