@@ -9,6 +9,7 @@ library(snakecase)
 library(stringr)
 library(readr)
 library(lubridate)
+library(glue)
 
 all_station_folder_path <- "R:/data_branches/water_quality/station_folders"
 rel_all_station_folder_path <- path_rel(all_station_folder_path)
@@ -78,7 +79,6 @@ char_cols <-
     "rising_or_falling",
     "status",
     "surface_buoy",
-    "dist_to_shore",
     "substrate",
     "deployment_notes",
     "retrieval_notes"
@@ -99,6 +99,7 @@ numeric_cols <-
     "sensor_depth",
     "serial",
     "sounding",
+    "dist_to_shore",
     "tide_correction",
     "verified_measurement_below_origin_first_sensor_under_float",
     "vessel_sounder_offset_transponder_depth",
