@@ -957,8 +957,21 @@ max(anchor_type_text_len, na.rm = TRUE)
 
 # float_type -------------------------------------------------------------------
 sort_unique_vals(logs$float_type)
-# TODO: investigate "2 big chains plus an anchor", and "Surface"
-# might be in wrong column
+logs <- logs %>%
+  mutate(float_type = tolower(float_type)) %>%
+  # Strip descriptors
+  mutate(float_type = str_remove(float_type, pattern = qualifiers_to_strip_regex)) %>%
+  mutate(float_type = str_remove(float_type, pattern = "small ")) %>%
+  mutate(float_type = str_remove(float_type, pattern = "orange")) %>%
+  mutate(float_type = str_remove(float_type, pattern = "yellow")) %>%
+  # Replace synonyms
+  mutate(float_type = str_replace(float_type, pattern = "float", replacement = "buoy")) %>%
+  mutate(float_type = str_replace(float_type, pattern = "viny ", replacement = "vinyl ")) %>%
+  mutate(float_type = str_replace(float_type, pattern = "viny$", replacement = "vinyl")) %>%
+  # Clean up formatting
+  mutate(float_type = trimws(float_type))
+  
+sort_unique_vals(logs$float_type)
 
 # distance_from_top_of_float_to_origin_first_sensor
 # and distance_from_top_of_float_to_origin_first_sensor_1 ----------------------
