@@ -344,15 +344,47 @@ max(serial_num_len, na.rm=TRUE) # smart to check this
 sort_unique_vals(logs$sensor_depth)
 # check for rows missing sensor depth
 any(is.na(logs$sensor_depth))
-# identify rows with missing serial numbers
+# identify rows with missing sensor depths
 # missing_sensor_depth <- logs %>% filter(is.na(sensor_depth))
 
-# TODO: Merge depth and depth_of_water_m into this column
+# Compare depth_maybe column to sensor depth column
+#sort_unique_vals(logs$depth_maybe)
+# Identify deployments with values in this column
+#logs %>% filter(!is.na(depth_maybe)) %>% distinct(location_description, deployment)
+# Ignore depth_maybe column
 
 # sounding ---------------------------------------------------------------------
 sort_unique_vals(logs$sounding)
 # found a sounding value of 670363 to investigate
 # logs %>% filter(sounding == 670363)
+
+# Compare depth_of_water_m column to sounding column
+sort_unique_vals(logs$depth_of_water_m)
+# Identify deployments with values in this column
+logs %>% filter(!is.na(depth_of_water_m)) %>% distinct(location_description, deployment)
+# Confirm values are either in sounding or in depth_of_water_m, not both
+logs %>% filter(!is.na(depth_of_water_m) & !is.na(sounding))
+# Can safely combine the columns and ignore NAs
+logs <- logs %>% unite(
+  col = "sounding",
+  c("sounding", "depth_of_water_m" ),
+  sep = "",
+  remove = TRUE,
+  na.rm = TRUE
+)
+
+colnames(logs)
+
+# Check values have been pulled into the final sounding column for the
+# deployments with depth_of_water_m
+logs %>% 
+  filter(
+    location_description == "Church Point 1" &
+      deployment == "2020-02-23" |
+      location_description == "Church Point 2" &
+      deployment == "2020-02-23"
+  ) %>%
+  distinct(location_description, deployment, sounding)
 
 # datum ------------------------------------------------------------------------
 sort_unique_vals(logs$datum)
