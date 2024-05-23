@@ -225,6 +225,19 @@ lost_but_have_retrieval_date <-
   retrieved %>% filter(status == "lost")
 deployed_but_have_retrieval_date <-
   retrieved %>% filter(status == "deployed")
+# Fix St Mary's River Logger 2 marked as deployed 
+# unable to find log to correct in situ
+logs <-
+  logs %>% mutate(
+    status = case_when(
+      deployment_waterbody == "St Mary's River" &
+        location_description == "Logger 2" ~ "lost",
+      .default = status
+    )
+  )
+logs %>% filter(deployment_waterbody == "St Mary's River" &
+                  location_description == "Logger 2")
+
 
 # duration ---------------------------------------------------------------------
 # nothing to do here I don't think, will be calculated by DB
