@@ -886,8 +886,8 @@ sort_unique_vals(logs$photos_taken)
 sort_unique_vals(logs$anchor_type)
 
 # TODO: Extract into helper functions
-weight_in_lbs_regex <- regex(pattern = "[0-9]+lbs?")
-weight_in_kg_regex <- regex(pattern = "[0-9]+kgs?")
+weight_lbs_regex <- regex(pattern = "[0-9]+lbs?")
+weight_kg_regex <- regex(pattern = "[0-9]+kgs?")
 qualifiers_to_strip_regex <- regex(pattern = "big |large |heavy |small ")
 logs <- logs %>%
   # Standardize punctuation and numerical representations
@@ -901,16 +901,16 @@ logs <- logs %>%
   mutate(anchor_type = str_replace(anchor_type, pattern = "^four ", replacement = "4 ")) %>%
   mutate(anchor_type = str_replace(anchor_type, pattern = " plus ", replacement = " + ")) %>%
   # Extract anchor weights and convert to kg where necessary
-  mutate(anchor_weight_in_lbs = str_match(anchor_type, pattern = weight_in_lbs_regex)) %>%
-  mutate(anchor_weight_in_lbs = parse_number(anchor_weight_in_lbs)) %>%
-  mutate(anchor_weight_in_kg = str_match(anchor_type, pattern = weight_in_kg_regex)) %>%
-  mutate(anchor_weight_in_kg = parse_number(anchor_weight_in_kg)) %>%
+  mutate(anchor_weight_lbs = str_match(anchor_type, pattern = weight_lbs_regex)) %>%
+  mutate(anchor_weight_lbs = parse_number(anchor_weight_lbs)) %>%
+  mutate(anchor_weight_kg = str_match(anchor_type, pattern = weight_kg_regex)) %>%
+  mutate(anchor_weight_kg = parse_number(anchor_weight_kg)) %>%
   # TODO: Do we want this many sigfigs?
-  mutate(anchor_weight_in_kg = case_when(is.na(anchor_weight_in_kg) ~ (anchor_weight_in_lbs * 0.45359237))) %>%
-  select(!anchor_weight_in_lbs) %>%
+  mutate(anchor_weight_kg = case_when(is.na(anchor_weight_kg) ~ (anchor_weight_lbs * 0.45359237))) %>%
+  select(!anchor_weight_lbs) %>%
   # Remove weights from anchor_type column
-  mutate(anchor_type = str_remove(anchor_type, pattern = weight_in_lbs_regex)) %>%
-  mutate(anchor_type = str_remove(anchor_type, pattern = weight_in_kg_regex)) %>%
+  mutate(anchor_type = str_remove(anchor_type, pattern = weight_lbs_regex)) %>%
+  mutate(anchor_type = str_remove(anchor_type, pattern = weight_kg_regex)) %>%
   mutate(anchor_type = str_squish(anchor_type)) %>%
   mutate(anchor_type = na_if(anchor_type,"")) %>%
   # Manage typos and some basic synonyms
@@ -937,7 +937,7 @@ logs <- logs %>%
   mutate(anchor_type = str_replace(anchor_type, pattern = "^chain$", replacement = "chains"))
   
 sort_unique_vals(logs$anchor_type)
-sort_unique_vals(logs$anchor_weight_in_kg)
+sort_unique_vals(logs$anchor_weight_kg)
 # TODO: Consider whether to trim decimal places for kg
 
 colnames(logs)
