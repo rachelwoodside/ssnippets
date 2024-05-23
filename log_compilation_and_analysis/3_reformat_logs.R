@@ -17,7 +17,40 @@ log_format_filename <- here("2024-03-26_new_log_format.xlsx")
 log_format_df <- read_excel(path = log_format_filename,
                             sheet = "log_example",
                             col_names = TRUE)
-log_col_names <- colnames(log_format_df)
+#log_col_names <- colnames(log_format_df)
+log_col_names <- c("station",
+                   "waterbody",
+                   "lease",
+                   "status",
+                   "deployment_date",
+                   "retrieval_date",
+                   "deployment_time_utc",
+                   "retrieval_time_utc",
+                   "deployment_latitude",
+                   "deployment_longitude",
+                   "retrieval_latitude",
+                   "retrieval_longitude",
+                   "sensor_type",
+                   "sensor_serial_number",
+                   "sensor_depth_m",
+                   "string_configuration",
+                   "sounding_m",
+                   "acoustic_release",
+                   "tide_correction_m",
+                   "vr2ar_lug_height_above_seafloor_m",
+                   "deployment_tide_direction",
+                   "primary_buoy_type",
+                   "secondary_buoy_type",
+                   "bottom_buoy_type",
+                   "anchor_type",
+                   "anchor_weight_kg",
+                   "biofouling_prevention",
+                   "datum",
+                   "photos_taken",
+                   "deployment_attendant",
+                   "retrieval_attendant",
+                   "notes")
+
 
 # Update to standard 2024 log format -------------------------------------------
 # Rename columns to match deployment tracking sheet/metadata
