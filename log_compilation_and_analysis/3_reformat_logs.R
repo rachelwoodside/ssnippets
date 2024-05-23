@@ -4,12 +4,23 @@
 # Library imports --------------------------------------------------------------
 library(dplyr)
 library(here)
+library(readxl)
+library(writexl)
 
 # Read in data -----------------------------------------------------------------
+# Clean logs
 clean_logs_filename <- here("clean_stacked_logs_2024-05-23.rds")
 clean_logs_df <- readRDS(clean_logs_filename)
 
+# Log format file
+log_format_filename <- here("2024-03-26_new_log_format.xlsx")
+log_format_df <- read_excel(path = log_format_filename,
+                            sheet = "log_example",
+                            col_names = TRUE)
+log_col_names <- colnames(log_format_df)
+
 # Update to standard 2024 log format -------------------------------------------
+# Rename columns to match deployment tracking sheet/metadata
 clean_logs_df <- clean_logs_df %>%
   rename(waterbody = deployment_waterbody) %>%
   rename(station = location_description) %>%
@@ -38,7 +49,7 @@ clean_logs_df <- clean_logs_df %>%
   select(!verified_measurement_below_origin_first_sensor_under_float) %>%
   rename(tide_correction_m = tide_correction) %>%
   rename(deployment_tide_direction = rising_or_falling) %>%
-  rename(vr2ar_lug_height_above_seafloor = height_of_vr_2_ar_base_off_bottom) %>%
+  rename(vr2ar_lug_height_above_seafloor_m = height_of_vr_2_ar_base_off_bottom) %>%
   # photos_taken -- unchanged
   # anchor_type -- unchanged
   rename(primary_buoy_type = float_type) %>%
@@ -52,58 +63,23 @@ clean_logs_df <- clean_logs_df %>%
   select(!longitude_maybe) %>%
   select(!depth_maybe) %>%
   select(!`15`) %>%
-  # secondary_float_type -- unchanged
-  rename(string_configuration = configuration)
+  rename(secondary_buoy_type = secondary_float_type) %>%
+  rename(string_configuration = configuration) %>%
 # deployment_attendant and retrieval_attendant -- unchanged
 # anchor_weight_in_kg -- unchanged
-# TODO: add missing columns
-# mutate(deployment_time_utc = "NA") %>%
-# mutate(retrieval_time_utc = "NA")  %>%
-# mutate(anchor_weight_kg = "NA") %>%
-# mutate(bottom_buoy_type = "NA") %>%
-# mutate(biofouling_prevention = "none")
+  mutate(bottom_buoy_type = NA) %>%
+  mutate(biofouling_prevention = "none")
 
 # Drop unneccessary columns and reorder to match log format
-clean_logs_df <-
-  clean_logs_df[, c(
-    "station",
-    "waterbody",
-    "lease",
-    "status",
-    "deployment_date",
-    "retrieval_date",
-    "deployment_time_utc",
-    "retrieval_time_utc",
-    "deployment_latitude",
-    "deployment_longitude",
-    "retrieval_latitude",
-    "retrieval_longitude",
-    "sensor_type",
-    "sensor_serial_number",
-    "sensor_depth_m",
-    "string_configuration",
-    "sounding_m",
-    "acoustic_release",
-    "tide_correction_m",
-    "vr2ar_lug_height_above_seafloor",
-    "deployment_tide_direction",
-    "primary_buoy_type",
-    "secondary_buoy_type",
-    "bottom_buoy_type",
-    "anchor_type",
-    "anchor_weight_kg",
-    "biofouling_prevention",
-    "datum",
-    "deployment_attendant",
-    "retrieval_attendant",
-    "photos_taken",
-    "notes"
-  )]
+clean_logs_df <- clean_logs_df %>%
+  select(all_of(log_col_names))
+
+# Check that all column names are present
+setdiff(log_col_names, colnames(clean_logs_df))
 
 # Generate file with standard 2024 log format ----------------------------------
 # Filter for currently deployed logs
 currently_deployed_clean <- clean_logs_df %>% filter(status == "deployed")
-# Rename columns to match deployment tracking sheet/metadata
 
 # Generate tables for database import ------------------------------------------
 # TODO
