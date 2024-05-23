@@ -80,6 +80,11 @@ setdiff(log_col_names, colnames(clean_logs_df))
 # Generate file with standard 2024 log format ----------------------------------
 # Filter for currently deployed logs
 currently_deployed_clean <- clean_logs_df %>% filter(status == "deployed")
+# TODO: Filter out river deployments
+# Write to Excel file
+write_xlsx(currently_deployed_clean, 
+           here("deployment_metadata_2024-05-23.xlsx"),
+           format_headers = FALSE)
 
 # Generate tables for database import ------------------------------------------
 # TODO
