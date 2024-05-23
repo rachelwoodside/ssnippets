@@ -109,7 +109,7 @@ fix_attendant_val <- function(attendant_val) {
 # File import and basic info ---------------------------------------------------
 
 # TODO: Add in option to read in most recent stacked log copy
-filename <- here("stacked_logs_2024-05-14.rds")
+filename <- here("stacked_logs_2024-05-23.rds")
 logs <- readRDS(filename)
 
 # Read in config table data
