@@ -875,14 +875,6 @@ sort_unique_vals(logs$height_of_vr_2_ar_base_off_bottom)
 # message(glue("Height of VR2AR Off Bottom Values: {height_of_vr2ar_vals}"))
 # message(glue("Height of VR2AR Off Bottom NAs: {height_of_vr2ar_nas}"))
 
-# time_of_deployment -----------------------------------------------------------
-# TODO: Look at these values more carefully - the unique values are weird for time
-sort_unique_vals(logs$time_of_deployment)
-logs %>% mutate(time_of_deployment = hms(time_of_deployment))
-time_of_deployment_vals <- logs %>% filter(!is.na(time_of_deployment))
-time_of_deployment_nas <- logs %>% filter(is.na(time_of_deployment))
-time_of_deployment_vals %>% select(time_of_deployment) %>% unique()
-
 # photos_taken -----------------------------------------------------------------
 sort_unique_vals(logs$photos_taken)
 # investigate unusual "metal slab" value for photos_taken
@@ -982,9 +974,47 @@ sort_unique_vals(logs$distance_from_top_of_float_to_origin_first_sensor_1)
 logs <- logs %>% select(!distance_from_top_of_float_to_origin_first_sensor_1)
 colnames(logs)
 
-# deployment_time -- salmon rivers ---------------------------------------------
-sort_unique_vals(logs$deployment_time)
-# TODO: Potentially group in with time_of_deployment
+# deployment_time and time_of_deployment
+# NOTE: the unique values for hms are weird - use distinct instead
+#sort_unique_vals(logs$deployment_time)
+#sort_unique_vals(logs$time_of_deployment)
+logs %>% filter(!is.na(deployment_time)) %>% distinct(location_description, deployment, deployment_time)
+logs %>% filter(!is.na(time_of_deployment)) %>% distinct(location_description, deployment, time_of_deployment)
+
+# Merge time_of_deployment values into deployment_time column
+logs %>% mutate(time_of_deployment = hms(time_of_deployment))
+time_of_deployment_vals <- logs %>% filter(!is.na(time_of_deployment))
+time_of_deployment_nas <- logs %>% filter(is.na(time_of_deployment))
+
+# Check if any columns have more than one deployment time column
+duplicate_depl_time_count <- nrow(logs %>% 
+  filter(as.numeric(!is.na(time_of_deployment)) & 
+           as.numeric(!is.na(deployment_time))) %>%
+  select(
+    location_description,
+    deployment,
+    deployment_time,
+    time_of_deployment
+  ))
+# Since there are no duplicate entries, simply merge the columns
+# Since the duplicate config entry values all match, we can simply take the 
+# first value that is not NA out of all of the columns
+logs <-
+  logs %>% mutate(
+    deployment_time = case_when(
+      !is.na(deployment_time) ~ deployment_time,
+      !is.na(time_of_deployment) ~ time_of_deployment,
+      .default = NA
+    )
+  )
+
+# Check values have been carried over
+logs %>% filter(!is.na(deployment_time)) %>% distinct(location_description, deployment, deployment_time)
+
+# Delete time_of_deployment column
+logs <- logs %>% select(!time_of_deployment)
+
+colnames(logs)
 
 # retrieval_time -- salmon rivers ----------------------------------------------
 sort_unique_vals(logs$retrieval_time)
