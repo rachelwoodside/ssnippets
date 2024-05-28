@@ -13,12 +13,7 @@ library(glue)
 clean_logs_filename <- here("clean_stacked_logs_2024-05-23.rds")
 clean_logs_df <- readRDS(clean_logs_filename)
 
-# Log format file
-log_format_filename <- here("2024-03-26_new_log_format.xlsx")
-log_format_df <- read_excel(path = log_format_filename,
-                            sheet = "log_example",
-                            col_names = TRUE)
-#log_col_names <- colnames(log_format_df)
+# Column names in correct order for deployment metadata tracking sheet
 log_col_names <- c("station",
                    "waterbody",
                    "lease",
