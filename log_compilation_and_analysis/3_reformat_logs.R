@@ -31,7 +31,7 @@ depl_tracking_metadata_col_names <-
   colnames(depl_tracking_metadata_df)
 
 # Check for column consistency between log format file and deployment tracking metadata file
-setdiff(depl_tracking_metadata_col_names, log_col_names)
+identical(depl_tracking_metadata_col_names, log_col_names)
 
 # Update to standard 2024 log format ------------------------------------------
 
