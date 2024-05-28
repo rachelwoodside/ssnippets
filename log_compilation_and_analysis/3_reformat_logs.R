@@ -90,7 +90,7 @@ currently_deployed_clean <- clean_logs_df %>% filter(status == "deployed")
 # TODO: Filter out river deployments
 # Write to Excel file
 write_xlsx(currently_deployed_clean, 
-           here("deployment_metadata_2024-05-23.xlsx"),
+           path = glue("{getwd()}/deployment_metadata_{today()}.rds"),
            format_headers = FALSE)
 
 # Generate tables for database import ------------------------------------------
