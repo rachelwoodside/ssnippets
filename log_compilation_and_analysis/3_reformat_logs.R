@@ -13,42 +13,28 @@ library(glue)
 clean_logs_filename <- here("clean_stacked_logs_2024-05-23.rds")
 clean_logs_df <- readRDS(clean_logs_filename)
 
-# Column names in correct order for deployment metadata tracking sheet
-log_col_names <- c("station",
-                   "waterbody",
-                   "lease",
-                   "status",
-                   "deployment_date",
-                   "retrieval_date",
-                   "deployment_time_utc",
-                   "retrieval_time_utc",
-                   "deployment_latitude",
-                   "deployment_longitude",
-                   "retrieval_latitude",
-                   "retrieval_longitude",
-                   "sensor_type",
-                   "sensor_serial_number",
-                   "sensor_depth_m",
-                   "string_configuration",
-                   "sounding_m",
-                   "acoustic_release",
-                   "tide_correction_m",
-                   "vr2ar_lug_height_above_seafloor_m",
-                   "deployment_tide_direction",
-                   "primary_buoy_type",
-                   "secondary_buoy_type",
-                   "bottom_buoy_type",
-                   "anchor_type",
-                   "anchor_weight_kg",
-                   "biofouling_prevention",
-                   "datum",
-                   "photos_taken",
-                   "deployment_attendant",
-                   "retrieval_attendant",
-                   "notes")
+# Log format file
+log_format_filename <-
+  "R:/data_branches/water_quality/processing_resources/2024-05-28_new_log_format.xlsx"
+log_format_df <- read_excel(path = log_format_filename,
+                            sheet = "log_example",
+                            col_names = TRUE)
+log_col_names <- colnames(log_format_df)
 
+# Deployment tracking metadata file
+depl_tracking_metadata_filename <-
+  "R:/tracking_sheets/metadata_tracking/water_quality_deployment_tracking.xlsx"
+depl_tracking_metadata_df <-
+  read_excel(path = depl_tracking_metadata_filename,
+             col_names = TRUE)
+depl_tracking_metadata_col_names <-
+  colnames(depl_tracking_metadata_df)
 
-# Update to standard 2024 log format -------------------------------------------
+# Check for column consistency between log format file and deployment tracking metadata file
+setdiff(depl_tracking_metadata_col_names, log_col_names)
+
+# Update to standard 2024 log format ------------------------------------------
+
 # Rename columns to match deployment tracking sheet/metadata
 clean_logs_df <- clean_logs_df %>%
   rename(waterbody = deployment_waterbody) %>%
