@@ -66,7 +66,7 @@ clean_logs_df <- clean_logs_df %>%
 # Check that all column names are present
 setdiff(log_col_names, colnames(clean_logs_df))
 
-# Generate file with standard 2024 log format ----------------------------------
+# Generate file with current CMP deployments in standard 2024 log format -------
 # Filter for currently deployed logs
 currently_deployed_clean <- clean_logs_df %>% filter(status == "deployed")
 # TODO: Filter out river deployments
@@ -75,5 +75,8 @@ write_xlsx(currently_deployed_clean,
            path = glue("{getwd()}/deployment_metadata_{today()}.rds"),
            format_headers = FALSE)
 
-# Generate tables for database import ------------------------------------------
-# TODO
+# Generate file with all deployments in standard 2024 log format ---------------
+# Write to Excel file
+write_xlsx(clean_logs_df, 
+           path = glue("{getwd()}/clean_stacked_reformatted_logs_{today()}.rds"),
+           format_headers = FALSE)
