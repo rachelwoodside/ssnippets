@@ -7,6 +7,7 @@ library(here)
 library(readxl)
 library(writexl)
 library(glue)
+library(lubridate)
 
 # Read in data -----------------------------------------------------------------
 # Clean logs
@@ -76,7 +77,6 @@ write_xlsx(currently_deployed_clean,
            format_headers = FALSE)
 
 # Generate file with all deployments in standard 2024 log format ---------------
-# Write to Excel file
-write_xlsx(clean_logs_df, 
-           path = glue("{getwd()}/clean_stacked_reformatted_logs_{today()}.rds"),
-           format_headers = FALSE)
+# Write to RDS file
+saveRDS(clean_logs_df,
+        file = glue("{getwd()}/clean_stacked_reformatted_logs_{today()}.rds"))
