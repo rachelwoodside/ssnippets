@@ -315,7 +315,7 @@ logs <-
       logger_model %in% hobo_pro_v2_synonyms ~ "HOBO Pro V2",
       logger_model %in% hobo_do_synonyms ~ "HOBO DO",
       logger_model %in% hobo_level_logger_synonyms ~ "HOBO Level Logger",
-      logger_model %in% tidbit_mx_2203_synonyms ~ "TidbiT MX 2203",
+      logger_model %in% tidbit_mx_2203_synonyms ~ "TidbiT MX2203",
       logger_model %in% aquameasure_sal_synonyms ~ "aquaMeasure SAL",
       logger_model %in% aquameasure_chl_synonyms ~ "aquaMeasure CHL",
       logger_model %in% aquameasure_dot_synonyms ~ "aquaMeasure DOT",
