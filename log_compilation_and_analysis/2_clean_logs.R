@@ -345,6 +345,18 @@ any(is.na(logs$serial))
 # identify rows with missing serial numbers
 missing_serial_num <- logs %>% filter(is.na(serial))
 
+# Remove rows with missing serial numbers
+# As of 2024-07-22 these are:
+# - 2019-04-25 Tickle Island 1: data is marked as DNU, if  serial number is 
+# missing this isn't even useful for sensor tracking purposes
+# - 2018-05-14 Taylor's Rock: DST Comp sensor so has no associated data, missing 
+# serial number means this isn't useful for sensor tracking purposes
+# - 2022-05-18 Logger 2 in St. Mary's River: aquaMeasure CHL sensor was lost so
+# has no associated data and the missing serial number means there's no reason
+# to track it
+logs <- logs %>% filter(!is.na(logs$serial))
+
+
 # Note - serial numbers 3 characters long are DST comp sensors
 # short_serial_nums <- logs %>%
 #   filter(str_length(serial) < 4)
