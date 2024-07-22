@@ -413,9 +413,12 @@ logs %>%
 
 # datum ------------------------------------------------------------------------
 sort_unique_vals(logs$datum)
+logs <- logs %>%
+  mutate(datum = replace_na(datum, "unknown"))
 # Investigate unusual values of datum (18.5, 13.5, 8.5, 3.5, WGS85)
 # unusual_datum_vals <- c("3.5", "8.5", "13.5", "18.5", "WGS85")
 # mystery_datum_vals <- logs %>% filter(datum %in% unusual_datum_vals)
+sort_unique_vals(logs$datum)
 
 # mount_type -------------------------------------------------------------------
 sort_unique_vals(logs$mount_type)
