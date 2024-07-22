@@ -546,7 +546,14 @@ colnames(logs)
 # acoustic_release -------------------------------------------------------------
 sort_unique_vals(logs$acoustic_release)
 logs <-
-  logs %>% mutate(acoustic_release = tolower(str_sub(acoustic_release, 1, 1)))
+  logs %>% 
+  # simplify format down to y, n, NA
+  mutate(acoustic_release = tolower(str_sub(acoustic_release, 1, 1))) %>%
+  # expand back out to yes, no, unknown
+  mutate(acoustic_release = case_when(acoustic_release == "y" ~ "yes",
+                                      acoustic_release == "n" ~ "no",
+                                      .default = "unknown"))
+  
 sort_unique_vals(logs$acoustic_release)
 
 # surface_buoy -----------------------------------------------------------------
@@ -904,7 +911,13 @@ sort_unique_vals(logs$height_of_vr_2_ar_base_off_bottom)
 sort_unique_vals(logs$photos_taken)
 # investigate unusual "metal slab" value for photos_taken
 #logs %>% filter(photos_taken == "Metal slab")
-logs <- logs %>% mutate(photos_taken = tolower(str_sub(photos_taken, 1, 1)))
+logs <- logs %>% 
+  # simplify format down to y, n, NA
+  mutate(photos_taken = tolower(str_sub(photos_taken, 1, 1))) %>%
+  # expand back out to yes, no, unknown
+  mutate(photos_taken = case_when(photos_taken == "y" ~ "yes", 
+                                  photos_taken == "n" ~ "no",
+                                  .default = "unknown"))
 sort_unique_vals(logs$photos_taken)
 
 # anchor_type ------------------------------------------------------------------
