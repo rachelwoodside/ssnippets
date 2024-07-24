@@ -106,7 +106,7 @@ numeric_cols <-
     "vessel_offset"
   )
 date_cols <- c("deployment", "retrieval")
-time_cols <- c("time_of_deployment", "deployment_time")
+time_cols <- c("time_of_deployment", "deployment_time", "retrieval_time")
 
 # Renaming key in the format new_name = old_name
 rename_key <-
@@ -138,7 +138,7 @@ all_log_dfs_std <-
       mutate(across(any_of(char_cols), as.character)) %>% 
       mutate(across(any_of(numeric_cols), extract_numeric)) %>% 
       mutate(across(any_of(date_cols), ymd)) %>% 
-      mutate(across(any_of(time_cols), hms))
+      mutate(across(any_of(time_cols), as.character))
   )
 
 # Standardize format of columns

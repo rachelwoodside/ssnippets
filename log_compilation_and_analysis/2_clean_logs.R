@@ -109,7 +109,7 @@ fix_attendant_val <- function(attendant_val) {
 # File import and basic info ---------------------------------------------------
 
 # TODO: Add in option to read in most recent stacked log copy
-filename <- here("stacked_logs_2024-07-22.rds")
+filename <- here("stacked_logs_2024-07-23.rds")
 logs <- readRDS(filename)
 
 # Read in config table data
@@ -1015,28 +1015,24 @@ sort_unique_vals(logs$distance_from_top_of_float_to_origin_first_sensor_1)
 logs <- logs %>% select(!distance_from_top_of_float_to_origin_first_sensor_1)
 colnames(logs)
 
-# deployment_time and time_of_deployment
-# NOTE: the unique values for hms are weird - use distinct instead
-#sort_unique_vals(logs$deployment_time)
-#sort_unique_vals(logs$time_of_deployment)
-logs %>% filter(!is.na(deployment_time)) %>% distinct(location_description, deployment, deployment_time)
-logs %>% filter(!is.na(time_of_deployment)) %>% distinct(location_description, deployment, time_of_deployment)
+# deployment_time and time_of_deployment ---------------------------------------
+sort_unique_vals(logs$deployment_time)
+sort_unique_vals(logs$time_of_deployment)
 
 # Merge time_of_deployment values into deployment_time column
-logs %>% mutate(time_of_deployment = hms(time_of_deployment))
 time_of_deployment_vals <- logs %>% filter(!is.na(time_of_deployment))
 time_of_deployment_nas <- logs %>% filter(is.na(time_of_deployment))
 
 # Check if any columns have more than one deployment time column
 duplicate_depl_time_count <- nrow(logs %>% 
-  filter(as.numeric(!is.na(time_of_deployment)) & 
-           as.numeric(!is.na(deployment_time))) %>%
-  select(
-    location_description,
-    deployment,
-    deployment_time,
-    time_of_deployment
-  ))
+                                    filter(as.numeric(!is.na(time_of_deployment)) & 
+                                             as.numeric(!is.na(deployment_time))) %>%
+                                    select(
+                                      location_description,
+                                      deployment,
+                                      deployment_time,
+                                      time_of_deployment
+                                    ))
 # Since there are no duplicate entries, simply merge the columns
 # Since the duplicate config entry values all match, we can simply take the 
 # first value that is not NA out of all of the columns
@@ -1054,6 +1050,38 @@ logs %>% filter(!is.na(deployment_time)) %>% distinct(location_description, depl
 
 # Delete time_of_deployment column
 logs <- logs %>% select(!time_of_deployment)
+
+sort_unique_vals(logs$deployment_time)
+# Handle unusual values
+# "1-:27" likely meant to be 10:27, but can't be sure - drop
+# "13.41" likely meant to be 13:41, but can't be sure - drop
+logs <- logs %>% 
+  filter(deployment_time != "13.41" & deployment_time != "1-:27")
+
+# Remove dates and AM/PM
+time_reformatted_logs <- logs %>%
+  # Remove dates
+  mutate(deployment_time = str_remove(
+    deployment_time, 
+    pattern = "[0-9]{4}-[0-9]{2}-[0-9]{2}")) %>%
+  mutate(deployment_time = trimws(deployment_time)) %>%
+  mutate(deployment_time = str_remove(deployment_time, "^T")) %>%
+  mutate(deployment_time = str_remove(deployment_time, "Z$")) %>%
+  # Some few times contain PM - not enough to be worth the time to convert
+  mutate(deployment_time = case_when("PM" %in% deployment_time ~ NA,
+                                     .default = deployment_time))
+
+sort_unique_vals(time_reformatted_logs$deployment_time)
+
+
+time_parsed_logs <- logs %>% 
+  mutate(deployment_time = ymd_hms(deployment_time))
+
+sort_unique_vals(time_parsed_logs$deployment_time)
+
+sort_unique_vals(logs$time_of_deployment)
+logs %>% filter(!is.na(deployment_time)) %>% distinct(location_description, deployment, deployment_time)
+logs %>% filter(!is.na(time_of_deployment)) %>% distinct(location_description, deployment, time_of_deployment)
 
 colnames(logs)
 

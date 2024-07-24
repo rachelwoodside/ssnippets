@@ -11,7 +11,7 @@ library(lubridate)
 
 # Read in data -----------------------------------------------------------------
 # Clean logs
-clean_logs_filename <- here("clean_stacked_logs_2024-07-22.rds")
+clean_logs_filename <- here("clean_stacked_logs_2024-07-23.rds")
 clean_logs_df <- readRDS(clean_logs_filename)
 
 # Log format file
