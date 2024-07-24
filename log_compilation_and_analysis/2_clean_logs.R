@@ -893,8 +893,8 @@ logs <-
     rising_or_falling = case_when(
       rising_or_falling %in% rising_synonyms ~ "rising",
       rising_or_falling %in% falling_synonyms ~ "falling",
-      rising_or_falling %in% slack_high_synonyms ~ "slack_high",
-      rising_or_falling %in% slack_low_synonyms ~ "slack_low",
+      rising_or_falling %in% slack_high_synonyms ~ "slack high",
+      rising_or_falling %in% slack_low_synonyms ~ "slack low",
       rising_or_falling %in% cannot_evaluate_tide_dir ~ NA,
       .default = rising_or_falling
     )
