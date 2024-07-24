@@ -11,7 +11,7 @@ library(lubridate)
 
 # Read in data -----------------------------------------------------------------
 # Clean logs
-clean_logs_filename <- here("clean_stacked_logs_2024-07-23.rds")
+clean_logs_filename <- here("clean_stacked_logs_2024-07-24.rds")
 clean_logs_df <- readRDS(clean_logs_filename)
 
 # Log format file
@@ -70,7 +70,6 @@ setdiff(log_col_names, colnames(clean_logs_df))
 # Generate file with current CMP deployments in standard 2024 log format -------
 # Filter for currently deployed logs
 currently_deployed_clean <- clean_logs_df %>% filter(status == "deployed")
-# TODO: Filter out river deployments
 # Write to Excel file
 write_xlsx(currently_deployed_clean, 
            path = glue("{getwd()}/deployment_metadata_{today()}.rds"),
