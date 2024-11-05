@@ -9,7 +9,7 @@ editor_options:
   chunk_output_type: console
 ---
 
-# Quick Path Formatting
+## Quick Path Formatting
 1. Enter your path
 2. Highlight the path
 3. `ctrl` + `F`
@@ -25,7 +25,7 @@ path <- "C:/Users/Nicole Torrie/Documents/R/packages/ssnippets"
 
 
 
-# Simple Code Alignment
+## Simple Code Alignment
 `ctrl` + `shift` + `a`
 
 #### Before
@@ -55,7 +55,7 @@ dt_options <- list(
 
 
 
-# `ggview` Package
+## `ggview` Package
 Danielle to add
 
 
