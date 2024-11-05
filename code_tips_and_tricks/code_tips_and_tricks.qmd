@@ -20,7 +20,7 @@ editor_options:
 8. Enjoy your formatted file path without having to manually replace every backslash (great for exceptionally long file paths)
 
 ```{r}
-path <- "C:/Users/Nicole Torrie/Documents/R/packages/ssnippets"
+path <- "C:/Users/Nicole Torrie/Documents/R/repositories/ssnippets"
 ```
 
 
