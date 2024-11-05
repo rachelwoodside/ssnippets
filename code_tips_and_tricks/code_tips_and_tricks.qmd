@@ -1,5 +1,5 @@
 ---
-title: "R Tips and tricks from CMAR R Nerds"
+title: "R tips and tricks CMAR R Nerds"
 format:
   html:
     toc: true
