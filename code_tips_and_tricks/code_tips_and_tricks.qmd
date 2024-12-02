@@ -27,6 +27,8 @@ path <- "C:/Users/Nicole Torrie/Documents/R/repositories/ssnippets"
 
 ## Simple Code Alignment
 `ctrl` + `shift` + `a`
+OR 
+`crtl` + `I`
 
 #### Before
 ```{r}
@@ -56,10 +58,38 @@ dt_options <- list(
 
 
 ## `ggview` Package
-Danielle to add
 
+Preview what a `ggplot` figure will look like when you save it to a file.
 
+Copy this code into your console or script to compare the dimensions of `p1` and `p2` in the Plots and Viewer panes (hover over code chunk and click the clipboard to copy). 
 
+Experiment with `w` and `h` to find the best dimensions for the figure.
+
+Use `w` and `h` as the `width` and `height` when you save the figure with `ggsave` to get the same dimensions. 
+```{r}
+#| eval: false
+
+library(ggview)
+library(ggplot2)
+library(here)
+
+data("iris")
+
+w <- 8
+h <- 4
+
+p1 <- ggplot(iris, aes(Sepal.Length, Petal.Width, col = Species)) +
+  geom_point() 
+  
+p1
+
+p2 <- p1 + canvas(width = w, height = h, units = "cm")
+
+p2
+
+ggsave(p1, filename = here("fig_p1.png"), width = w, height = h, dpi = 600)
+
+```
 
 
 

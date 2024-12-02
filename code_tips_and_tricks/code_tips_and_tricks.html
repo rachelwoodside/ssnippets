@@ -2,12 +2,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.2.335">
+<meta name="generator" content="quarto-1.2.475">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>R Tips and tricks from CMAR R Nerds</title>
+<title>R tips and tricks CMAR R Nerds</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -2617,7 +2617,7 @@ vertical-align: -.125em;
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">R Tips and tricks from CMAR R Nerds</h1>
+<h1 class="title">R tips and tricks CMAR R Nerds</h1>
 </div>
 
 
@@ -2645,12 +2645,12 @@ vertical-align: -.125em;
 <li>Enjoy your formatted file path without having to manually replace every backslash (great for exceptionally long file paths)</li>
 </ol>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>path <span class="ot">&lt;-</span> <span class="st">&quot;C:/Users/Nicole Torrie/Documents/R/packages/ssnippets&quot;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>path <span class="ot">&lt;-</span> <span class="st">&quot;C:/Users/Nicole Torrie/Documents/R/repositories/ssnippets&quot;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="simple-code-alignment" class="level2">
 <h2 class="anchored" data-anchor-id="simple-code-alignment">Simple Code Alignment</h2>
-<p><code>ctrl</code> + <code>shift</code> + <code>a</code></p>
+<p><code>ctrl</code> + <code>shift</code> + <code>a</code> OR <code>crtl</code> + <code>I</code></p>
 <section id="before" class="level4">
 <h4 class="anchored" data-anchor-id="before">Before</h4>
 <div class="cell">
@@ -2680,7 +2680,31 @@ vertical-align: -.125em;
 </section>
 <section id="ggview-package" class="level2">
 <h2 class="anchored" data-anchor-id="ggview-package"><code>ggview</code> Package</h2>
-<p>Danielle to add</p>
+<p>Preview what a <code>ggplot</code> figure will look like when you save it to a file.</p>
+<p>Copy this code into your console or script to compare the dimensions of <code>p1</code> and <code>p2</code> in the Plots and Viewer panes (hover over code chunk and click the clipboard to copy).</p>
+<p>Experiment with <code>w</code> and <code>h</code> to find the best dimensions for the figure.</p>
+<p>Use <code>w</code> and <code>h</code> as the <code>width</code> and <code>height</code> when you save the figure with <code>ggsave</code> to get the same dimensions.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggview)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(here)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;iris&quot;</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>w <span class="ot">&lt;-</span> <span class="dv">8</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>h <span class="ot">&lt;-</span> <span class="dv">4</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(iris, <span class="fu">aes</span>(Sepal.Length, Petal.Width, <span class="at">col =</span> Species)) <span class="sc">+</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() </span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>p1</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> p1 <span class="sc">+</span> <span class="fu">canvas</span>(<span class="at">width =</span> w, <span class="at">height =</span> h, <span class="at">units =</span> <span class="st">&quot;cm&quot;</span>)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>p2</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(p1, <span class="at">filename =</span> <span class="fu">here</span>(<span class="st">&quot;fig_p1.png&quot;</span>), <span class="at">width =</span> w, <span class="at">height =</span> h, <span class="at">dpi =</span> <span class="dv">600</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 </section>
 
 </main>
