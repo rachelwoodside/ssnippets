@@ -1,0 +1,65 @@
+---
+title: "R tips and tricks CMAR R Nerds"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    embed-resources: true
+editor_options: 
+  chunk_output_type: console
+---
+
+## Quick Path Formatting
+1. Enter your path
+2. Highlight the path
+3. `ctrl` + `F`
+4. In the `Find` bar type `\`
+5. In the `Replace` bar type `/`
+6. Toggle the `In Selection` option
+7. Click `All`
+8. Enjoy your formatted file path without having to manually replace every backslash (great for exceptionally long file paths)
+
+```{r}
+path <- "C:/Users/Nicole Torrie/Documents/R/repositories/ssnippets"
+```
+
+
+
+## Simple Code Alignment
+`ctrl` + `shift` + `a`
+
+#### Before
+```{r}
+dt_options <- list(
+                           dom = 'ft',
+paging = FALSE,
+              searching = TRUE,
+  scrollY = "500px", scrollX = "500px", columnDefs = list(list(className = 'dt-center', targets = "_all"))
+)
+```
+
+#### After
+```{r}
+dt_options <- list(
+  dom = 'ft',
+  paging = FALSE,
+  searching = TRUE,
+  scrollY = "500px",
+  scrollX = "500px",
+  columnDefs = list(list(
+    className = 'dt-center', targets = "_all"
+  ))
+)
+```
+
+
+
+
+## `ggview` Package
+Danielle to add
+
+
+
+
+
+

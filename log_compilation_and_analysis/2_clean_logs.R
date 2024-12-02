@@ -9,6 +9,7 @@ library(snakecase)
 library(here)
 library(glue)
 library(readxl)
+library(readr)
 library(stringr)
 library(purrr)
 library(tidyr)
@@ -108,7 +109,7 @@ fix_attendant_val <- function(attendant_val) {
 # File import and basic info ---------------------------------------------------
 
 # TODO: Add in option to read in most recent stacked log copy
-filename <- here("stacked_logs_2024-04-29.rds")
+filename <- here("stacked_logs_2024-05-23.rds")
 logs <- readRDS(filename)
 
 # Read in config table data
@@ -224,6 +225,19 @@ lost_but_have_retrieval_date <-
   retrieved %>% filter(status == "lost")
 deployed_but_have_retrieval_date <-
   retrieved %>% filter(status == "deployed")
+# Fix St Mary's River Logger 2 marked as deployed 
+# unable to find log to correct in situ
+logs <-
+  logs %>% mutate(
+    status = case_when(
+      deployment_waterbody == "St Mary's River" &
+        location_description == "Logger 2" ~ "lost",
+      .default = status
+    )
+  )
+logs %>% filter(deployment_waterbody == "St Mary's River" &
+                  location_description == "Logger 2")
+
 
 # duration ---------------------------------------------------------------------
 # nothing to do here I don't think, will be calculated by DB
@@ -233,6 +247,9 @@ sort_unique_vals(logs$duration)
 
 # logger_latitude --------------------------------------------------------------
 sort_unique_vals(logs$logger_latitude)
+# Check for negative values
+negative_depl_latitude_vals <- count(logs %>% filter(logger_latitude < 0))
+message(glue("No negative deployment latitude values: {negative_depl_latitude_vals == 0}"))
 # check for rows missing logger latitudes
 any(is.na(logs$logger_latitude))
 # identify rows with missing logger_latitude
@@ -240,12 +257,14 @@ any(is.na(logs$logger_latitude))
 
 # logger_longitude -------------------------------------------------------------
 sort_unique_vals(logs$logger_longitude)
-# check for rows missing logger_longitude
+# Check for positive values
+positive_depl_longitude_vals <- count(logs %>% filter(logger_longitude > 0))
+message(glue("No positive deployment longitude values: {positive_depl_longitude_vals == 0}"))
 any(is.na(logs$logger_longitude))
 any(logs$logger_longitude > 0)
 # identify rows with missing or nonnegative logger_longitude
-nonnegative_or_missing_longitude <-
-  logs %>% filter(is.na(logger_longitude) | logger_longitude > 0)
+#nonnegative_or_missing_longitude <-
+#  logs %>% filter(is.na(logger_longitude) | logger_longitude > 0)
 
 # logger_model -----------------------------------------------------------------
 sort_unique_vals(logs$logger_model)
@@ -322,9 +341,9 @@ sort_unique_vals(logs$logger_model)
 # serial (num) -----------------------------------------------------------------
 sort_unique_vals(logs$serial)
 # check for rows missing serial num
-any(is.na(logs$logger_latitude))
+any(is.na(logs$serial))
 # identify rows with missing serial numbers
-# missing_serial_num <- logs %>% filter(is.na(serial))
+missing_serial_num <- logs %>% filter(is.na(serial))
 
 # Note - serial numbers 3 characters long are DST comp sensors
 # short_serial_nums <- logs %>%
@@ -338,13 +357,47 @@ max(serial_num_len, na.rm=TRUE) # smart to check this
 sort_unique_vals(logs$sensor_depth)
 # check for rows missing sensor depth
 any(is.na(logs$sensor_depth))
-# identify rows with missing serial numbers
+# identify rows with missing sensor depths
 # missing_sensor_depth <- logs %>% filter(is.na(sensor_depth))
+
+# Compare depth_maybe column to sensor depth column
+#sort_unique_vals(logs$depth_maybe)
+# Identify deployments with values in this column
+#logs %>% filter(!is.na(depth_maybe)) %>% distinct(location_description, deployment)
+# Ignore depth_maybe column
 
 # sounding ---------------------------------------------------------------------
 sort_unique_vals(logs$sounding)
 # found a sounding value of 670363 to investigate
 # logs %>% filter(sounding == 670363)
+
+# Compare depth_of_water_m column to sounding column
+sort_unique_vals(logs$depth_of_water_m)
+# Identify deployments with values in this column
+logs %>% filter(!is.na(depth_of_water_m)) %>% distinct(location_description, deployment)
+# Confirm values are either in sounding or in depth_of_water_m, not both
+logs %>% filter(!is.na(depth_of_water_m) & !is.na(sounding))
+# Can safely combine the columns and ignore NAs
+logs <- logs %>% unite(
+  col = "sounding",
+  c("sounding", "depth_of_water_m" ),
+  sep = "",
+  remove = TRUE,
+  na.rm = TRUE
+)
+
+colnames(logs)
+
+# Check values have been pulled into the final sounding column for the
+# deployments with depth_of_water_m
+logs %>% 
+  filter(
+    location_description == "Church Point 1" &
+      deployment == "2020-02-23" |
+      location_description == "Church Point 2" &
+      deployment == "2020-02-23"
+  ) %>%
+  distinct(location_description, deployment, sounding)
 
 # datum ------------------------------------------------------------------------
 sort_unique_vals(logs$datum)
@@ -355,13 +408,29 @@ sort_unique_vals(logs$datum)
 # mount_type -------------------------------------------------------------------
 sort_unique_vals(logs$mount_type)
 logs <- logs %>% mutate(mount_type = tolower(mount_type))
-# TODO: Clean up and standardize mount types
+# Clean up and standardize mount types
+sort_unique_vals(logs$mount_type)
+logs <- logs %>% 
+  mutate(mount_type = str_replace(mount_type, pattern = "subsurface", replacement = "sub-surface")) %>%
+  mutate(mount_type = str_replace(mount_type, pattern = "sub surface", replacement = "sub-surface")) %>%
+  mutate(mount_type = str_replace(mount_type, pattern = "float", replacement = "buoy")) %>%
+  mutate(mount_type = str_replace(mount_type, pattern = "buoying", replacement = "floating")) %>%
+  mutate(mount_type = str_replace(mount_type, pattern = "cinderblock", replacement = "cinder block")) %>%
+  mutate(mount_type = str_replace(mount_type, pattern = "^sub-surface$", replacement = "sub-surface buoy")) %>%
+  mutate(mount_type = str_replace(mount_type, pattern = "oyster cage", replacement = "gear")) %>%
+  mutate(mount_type = str_remove(mount_type, pattern = "on ")) %>%
+  mutate(mount_type = str_remove(mount_type, pattern = " yellow nav")) %>%
+  mutate(mount_type = str_remove(mount_type, pattern = "\\(at high tide\\)")) %>%
+  mutate(mount_type = trimws(mount_type))
+
 sort_unique_vals(logs$mount_type)
 
 # mooring_type -----------------------------------------------------------------
 sort_unique_vals(logs$mooring_type)
 logs <- logs %>% mutate(mooring_type = tolower(mooring_type))
-# TODO: Clean up and standardize mooring types
+# Clean up and standardize mooring types
+logs <- logs %>% 
+  mutate(mooring_type = str_replace(mooring_type, pattern = "float$", replacement = "floating"))
 sort_unique_vals(logs$mooring_type)
 
 # configuration ----------------------------------------------------------------
@@ -467,15 +536,17 @@ sort_unique_vals(logs$acoustic_release)
 logs <-
   logs %>% mutate(acoustic_release = tolower(str_sub(acoustic_release, 1, 1)))
 sort_unique_vals(logs$acoustic_release)
-# check for rows missing acoustic_release values
-any(is.na(logs$acoustic_release))
 
 # surface_buoy -----------------------------------------------------------------
 sort_unique_vals(logs$surface_buoy)
-# TODO: Check "mounted to oyster cage" value for surface buoy
-logs %>% filter(surface_buoy == "Mounted to oyster cage")
-# check for rows missing surface_buoy values
-any(is.na(logs$surface_buoy))
+# Narrow down to Y/N values
+logs <- logs %>% 
+  mutate(surface_buoy = tolower(surface_buoy)) %>%
+  mutate(surface_buoy = case_when(surface_buoy == "mounted to oyster cage" ~ NA,
+                                  surface_buoy == "at high tide" ~ NA,
+                                  .default = surface_buoy)) %>%
+  mutate(surface_buoy = tolower(str_sub(surface_buoy, 1, 1)))
+sort_unique_vals(logs$surface_buoy)
 
 # deployment_attendant and retrieval_attendant cleanup prep --------------------
 # Examine all attendant values
@@ -515,7 +586,7 @@ logs <- logs %>%
   # Replace invalid values according to mapping defined previously
   mutate(across(contains("deployment_attendant_sep"), fix_attendant_val)) %>%
   # Remove empty strings
-  mutate(across(contains("deployment_attendant_sep"), na_if, "")) %>%
+  mutate(across(contains("deployment_attendant_sep"), ~ na_if(., ""))) %>%
   # Reunite separate columns and remove temporary columns
   unite(
     col = "deployment_attendant",
@@ -523,10 +594,11 @@ logs <- logs %>%
     sep = ", ",
     remove = TRUE,
     na.rm = TRUE
-  )
+  ) %>%
+  mutate(deployment_attendant = na_if(deployment_attendant, ""))
 
 sort_unique_vals(logs$deployment_attendant)
-  
+
 # Check deployment_attendant text length
 sort_unique_vals(logs$deployment_attendant)
 depl_attendant_text_len <-
@@ -558,7 +630,7 @@ logs <- logs %>%
   # Replace invalid values according to mapping defined previously
   mutate(across(contains("retrieval_attendant_sep"), fix_attendant_val)) %>%
   # Remove empty strings
-  mutate(across(contains("retrieval_attendant_sep"), na_if, "")) %>%
+  mutate(across(contains("retrieval_attendant_sep"), ~ na_if(., ""))) %>%
   # Reunite separate columns and remove temporary columns
   unite(
     col = "retrieval_attendant",
@@ -566,7 +638,8 @@ logs <- logs %>%
     sep = ", ",
     remove = TRUE,
     na.rm = TRUE
-  )
+  ) %>%
+  mutate(retrieval_attendant = na_if(retrieval_attendant, ""))
 
 sort_unique_vals(logs$retrieval_attendant)
 
@@ -638,100 +711,158 @@ sort_unique_vals(logs$notes)
 
 # deployment_waypoint ----------------------------------------------------------
 sort_unique_vals(logs$deployment_waypoint)
-depl_waypoint_vals <- count(logs %>% filter(!is.na(deployment_waypoint)))
-depl_waypoint_nas <- count(logs %>% filter(is.na(deployment_waypoint)))
-message(glue("Deployment Waypoint Values: {depl_waypoint_vals}"))
-message(glue("Deployment Waypoint NAs: {depl_waypoint_nas}"))
+# depl_waypoint_vals <- count(logs %>% filter(!is.na(deployment_waypoint)))
+# depl_waypoint_nas <- count(logs %>% filter(is.na(deployment_waypoint)))
+# message(glue("Deployment Waypoint Values: {depl_waypoint_vals}"))
+# message(glue("Deployment Waypoint NAs: {depl_waypoint_nas}"))
 
 # retrieval_waypoint -----------------------------------------------------------
 sort_unique_vals(logs$retrieval_waypoint)
-retrieval_waypoint_vals <- count(logs %>% filter(!is.na(retrieval_waypoint)))
-retrieval_waypoint_nas <- count(logs %>% filter(is.na(retrieval_waypoint)))
-message(glue("Retrieval Waypoint Values: {retrieval_waypoint_vals}"))
-message(glue("Retrieval Waypoint NAs: {retrieval_waypoint_nas}"))
+# retrieval_waypoint_vals <- count(logs %>% filter(!is.na(retrieval_waypoint)))
+# retrieval_waypoint_nas <- count(logs %>% filter(is.na(retrieval_waypoint)))
+# message(glue("Retrieval Waypoint Values: {retrieval_waypoint_vals}"))
+# message(glue("Retrieval Waypoint NAs: {retrieval_waypoint_nas}"))
 
 # retrieval_latitude -----------------------------------------------------------
 sort_unique_vals(logs$retrieval_latitude)
-retrieval_latitude_vals <- count(logs %>% filter(!is.na(retrieval_latitude)))
-retrieval_latitude_nas <- count(logs %>% filter(is.na(retrieval_latitude)))
-message(glue("Retrieval latitude Values: {retrieval_latitude_vals}"))
-message(glue("Retrieval latitude NAs: {retrieval_latitude_nas}"))
+# retrieval_latitude_vals <- count(logs %>% filter(!is.na(retrieval_latitude)))
+# retrieval_latitude_nas <- count(logs %>% filter(is.na(retrieval_latitude)))
+# message(glue("Retrieval latitude Values: {retrieval_latitude_vals}"))
+# message(glue("Retrieval latitude NAs: {retrieval_latitude_nas}"))
+
+# Check for negative values
+negative_retrieval_latitude_vals <-
+  count(logs %>% filter(retrieval_latitude < 0))
+message(
+  glue(
+    "No negative retrieval latitude values: {negative_retrieval_latitude_vals == 0}"
+  )
+)
 
 # retrieval_longitude ----------------------------------------------------------
 sort_unique_vals(logs$retrieval_longitude)
-retrieval_longitude_vals <- count(logs %>% filter(!is.na(retrieval_longitude)))
-retrieval_longitude_nas <- count(logs %>% filter(is.na(retrieval_longitude)))
-message(glue("Retrieval longitude Values: {retrieval_longitude_vals}"))
-message(glue("Retrieval longitude NAs: {retrieval_longitude_nas}"))
+# retrieval_longitude_vals <- count(logs %>% filter(!is.na(retrieval_longitude)))
+# retrieval_longitude_nas <- count(logs %>% filter(is.na(retrieval_longitude)))
+# message(glue("Retrieval longitude Values: {retrieval_longitude_vals}"))
+# message(glue("Retrieval longitude NAs: {retrieval_longitude_nas}"))
 
 # Check for positive values
-nonnegative_retrieval_longitude <- logs %>% filter(retrieval_longitude > 0)
+positive_retrieval_longitude_vals <-
+  count(logs %>% filter(logger_longitude > 0))
+message(
+  glue(
+    "No positive retrieval longitude values: {positive_retrieval_longitude_vals == 0}"
+  )
+)
 
 # sensor_voltage_deployed ------------------------------------------------------
 sort_unique_vals(logs$sensor_voltage_deployed)
-sensor_voltage_depl_vals <- count(logs %>% filter(!is.na(sensor_voltage_deployed)))
-sensor_voltage_depl_nas <- count(logs %>% filter(is.na(sensor_voltage_deployed)))
-message(glue("Sensor Voltage Deployed Values: {sensor_voltage_depl_vals}"))
-message(glue("Sensor Voltage Deployed NAs: {sensor_voltage_depl_nas}"))
+# sensor_voltage_depl_vals <-
+#   count(logs %>% filter(!is.na(sensor_voltage_deployed)))
+# sensor_voltage_depl_nas <-
+#   count(logs %>% filter(is.na(sensor_voltage_deployed)))
+# message(glue("Sensor Voltage Deployed Values: {sensor_voltage_depl_vals}"))
+# message(glue("Sensor Voltage Deployed NAs: {sensor_voltage_depl_nas}"))
 
 # sensor_voltage_deployed value to investigate = 354
-logs %>% filter(sensor_voltage_deployed == 354)
+#logs %>% filter(sensor_voltage_deployed == 354)
 
 # sensor_voltage_retrieved -----------------------------------------------------
 sort_unique_vals(logs$sensor_voltage_retrieved)
-sensor_voltage_retrieved_vals <- count(logs %>% filter(!is.na(sensor_voltage_retrieved)))
-sensor_voltage_retrieved_nas <- count(logs %>% filter(is.na(sensor_voltage_retrieved)))
-message(glue("Sensor Voltage retrieved Values: {sensor_voltage_retrieved_vals}"))
-message(glue("Sensor Voltage retrieved NAs: {sensor_voltage_retrieved_nas}"))
+# sensor_voltage_retrieved_vals <-
+#   count(logs %>% filter(!is.na(sensor_voltage_retrieved)))
+# sensor_voltage_retrieved_nas <-
+#   count(logs %>% filter(is.na(sensor_voltage_retrieved)))
+# message(glue(
+#   "Sensor Voltage retrieved Values: {sensor_voltage_retrieved_vals}"
+# ))
+# message(glue("Sensor Voltage retrieved NAs: {sensor_voltage_retrieved_nas}"))
 
 # vessel_sounder_offset_transponder_depth --------------------------------------
 sort_unique_vals(logs$vessel_sounder_offset_transponder_depth)
-vessel_sounder_offset_vals <- count(logs %>% filter(!is.na(vessel_sounder_offset_transponder_depth)))
-vessel_sounder_offset_nas <- count(logs %>% filter(is.na(vessel_sounder_offset_transponder_depth)))
-message(glue("Vessel Sounder Offset Values: {vessel_sounder_offset_vals}"))
-message(glue("Vessel Sounder Offset NAs: {vessel_sounder_offset_nas}"))
+# vessel_sounder_offset_vals <-
+#   count(logs %>% filter(!is.na(
+#     vessel_sounder_offset_transponder_depth
+#   )))
+# vessel_sounder_offset_nas <-
+#   count(logs %>% filter(is.na(
+#     vessel_sounder_offset_transponder_depth
+#   )))
+# message(glue("Vessel Sounder Offset Values: {vessel_sounder_offset_vals}"))
+# message(glue("Vessel Sounder Offset NAs: {vessel_sounder_offset_nas}"))
 
 # sounder offset values to investigate
-logs %>% filter(vessel_sounder_offset_transponder_depth > 25)
+# logs %>% filter(vessel_sounder_offset_transponder_depth > 25)
 
 # verified_measurement_below_origin_first_sensor_under_float -------------------
 sort_unique_vals(logs$verified_measurement_below_origin_first_sensor_under_float)
-first_sensor_under_float_vals <- count(logs %>% filter(!is.na(verified_measurement_below_origin_first_sensor_under_float)))
-first_sensor_under_float_nas <- count(logs %>% filter(is.na(verified_measurement_below_origin_first_sensor_under_float)))
-message(glue("First Sensor Under Float Measurement Values: {first_sensor_under_float_vals}"))
-message(glue("First Sensor Under Float Measurement NAs: {first_sensor_under_float_nas}"))
-
-# first sensor under float measurements to investigate
-# TODO: What values for this are reasonable? More than 25?
-logs %>% filter(verified_measurement_below_origin_first_sensor_under_float > 25)
+# first_sensor_under_float_vals <-
+#   count(logs %>% filter(
+#     !is.na(verified_measurement_below_origin_first_sensor_under_float)
+#   ))
+# first_sensor_under_float_nas <-
+#   count(logs %>% filter(
+#     is.na(verified_measurement_below_origin_first_sensor_under_float)
+#   ))
+# message(glue(
+#   "First Sensor Under Float Measurement Values: {first_sensor_under_float_vals}"
+# ))
+# message(glue(
+#   "First Sensor Under Float Measurement NAs: {first_sensor_under_float_nas}"
+# ))
 
 # tide_correction --------------------------------------------------------------
 sort_unique_vals(logs$tide_correction)
-tide_correction_vals <- count(logs %>% filter(!is.na(tide_correction)))
-tide_correction_nas <- count(logs %>% filter(is.na(tide_correction)))
-message(glue("Tide Correction Values: {tide_correction_vals}"))
-message(glue("Tide Correction NAs: {tide_correction_nas}"))
+# tide_correction_vals <- count(logs %>% filter(!is.na(tide_correction)))
+# tide_correction_nas <- count(logs %>% filter(is.na(tide_correction)))
+# message(glue("Tide Correction Values: {tide_correction_vals}"))
+# message(glue("Tide Correction NAs: {tide_correction_nas}"))
 
 # rising_or_falling ------------------------------------------------------------
 sort_unique_vals(logs$rising_or_falling)
-rising_or_falling_vals <- count(logs %>% filter(!is.na(rising_or_falling)))
-rising_or_falling_nas <- count(logs %>% filter(is.na(rising_or_falling)))
-message(glue("Rising or Falling Tide Values: {rising_or_falling_vals}"))
-message(glue("Rising or Falling Tide NAs: {rising_or_falling_nas}"))
+# rising_or_falling_vals <- count(logs %>% filter(!is.na(rising_or_falling)))
+# rising_or_falling_nas <- count(logs %>% filter(is.na(rising_or_falling)))
+# message(glue("Rising or Falling Tide Values: {rising_or_falling_vals}"))
+# message(glue("Rising or Falling Tide NAs: {rising_or_falling_nas}"))
 
 # Define alternative naming groups
 rising_synonyms <-
-  c("+", "low rising", "mid-high rising", "Mid, rising", "rising", "RISING",
-    "Mid tide, rising", "Rising")
+  c(
+    "+",
+    "low rising",
+    "mid-high rising",
+    "Mid, rising",
+    "rising",
+    "RISING",
+    "Mid tide, rising",
+    "Rising"
+  )
 
 falling_synonyms <-
-  c("-", "Dropping", "Falling", "High, falling", "falling", "High tide, falling")
+  c("-",
+    "Dropping",
+    "Falling",
+    "High, falling",
+    "falling",
+    "High tide, falling")
 
 slack_high_synonyms <-
-  c("high", "High tide", "neutral high", "High", "high, turning", "slack_high")
+  c("high",
+    "High tide",
+    "neutral high",
+    "High",
+    "high, turning",
+    "slack_high")
 
-slack_low_synonyms <- c("Low", "low", "Falling (but almost back to rising)",
-                        "Low neutral", "neutral low", "slack_low")
+slack_low_synonyms <-
+  c(
+    "Low",
+    "low",
+    "Falling (but almost back to rising)",
+    "Low neutral",
+    "neutral low",
+    "slack_low"
+  )
 
 cannot_evaluate_tide_dir <- c("0.55m", "Mid", "Neutral")
 
@@ -750,45 +881,153 @@ sort_unique_vals(logs$rising_or_falling)
 
 # height_of_vr_2_ar_base_off_bottom --------------------------------------------
 sort_unique_vals(logs$height_of_vr_2_ar_base_off_bottom)
-height_of_vr2ar_vals <- count(logs %>% filter(!is.na(height_of_vr_2_ar_base_off_bottom)))
-height_of_vr2ar_nas <- count(logs %>% filter(is.na(height_of_vr_2_ar_base_off_bottom)))
-message(glue("Height of VR2AR Off Bottom Values: {height_of_vr2ar_vals}"))
-message(glue("Height of VR2AR Off Bottom NAs: {height_of_vr2ar_nas}"))
-
-# time_of_deployment -----------------------------------------------------------
-# TODO: Look at these values more carefully - the unique values are weird for time
-sort_unique_vals(logs$time_of_deployment)
-time_of_deployment_vals <- logs %>% filter(!is.na(time_of_deployment))
-time_of_deployment_nas <- logs %>% filter(is.na(time_of_deployment))
+# height_of_vr2ar_vals <-
+#   count(logs %>% filter(!is.na(height_of_vr_2_ar_base_off_bottom)))
+# height_of_vr2ar_nas <-
+#   count(logs %>% filter(is.na(height_of_vr_2_ar_base_off_bottom)))
+# message(glue("Height of VR2AR Off Bottom Values: {height_of_vr2ar_vals}"))
+# message(glue("Height of VR2AR Off Bottom NAs: {height_of_vr2ar_nas}"))
 
 # photos_taken -----------------------------------------------------------------
 sort_unique_vals(logs$photos_taken)
 # investigate unusual "metal slab" value for photos_taken
 #logs %>% filter(photos_taken == "Metal slab")
 logs <- logs %>% mutate(photos_taken = tolower(str_sub(photos_taken, 1, 1)))
-unique(logs$photos_taken)
-# TODO: empty rows to "n"
-logs %>% mutate(photos_taken = case_when(is.na(photos_taken) ~ "n"))
 sort_unique_vals(logs$photos_taken)
 
 # anchor_type ------------------------------------------------------------------
 sort_unique_vals(logs$anchor_type)
-logs <- logs %>% mutate(anchor_type = tolower(anchor_type))
+
+# TODO: Extract into helper functions
+weight_lbs_regex <- regex(pattern = "[0-9]+lbs?")
+weight_kg_regex <- regex(pattern = "[0-9]+kgs?")
+qualifiers_to_strip_regex <- regex(pattern = "big |large |heavy |small ")
+logs <- logs %>%
+  # Standardize punctuation and numerical representations
+  mutate(anchor_type = tolower(anchor_type)) %>%
+  mutate(anchor_type = str_remove(anchor_type, pattern = ",")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "-", replacement = " ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^one |single ", replacement = "1 ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = " one ", replacement = " 1 ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^two ", replacement = "2 ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^three ", replacement = "3 ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^four ", replacement = "4 ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = " plus ", replacement = " + ")) %>%
+  # Extract anchor weights and convert to kg where necessary
+  mutate(anchor_weight_lbs = str_match(anchor_type, pattern = weight_lbs_regex)) %>%
+  mutate(anchor_weight_lbs = parse_number(anchor_weight_lbs)) %>%
+  mutate(anchor_weight_kg = str_match(anchor_type, pattern = weight_kg_regex)) %>%
+  mutate(anchor_weight_kg = parse_number(anchor_weight_kg)) %>%
+  # TODO: Do we want this many sigfigs?
+  mutate(anchor_weight_kg = case_when(is.na(anchor_weight_kg) ~ (anchor_weight_lbs * 0.45359237))) %>%
+  select(!anchor_weight_lbs) %>%
+  # Remove weights from anchor_type column
+  mutate(anchor_type = str_remove(anchor_type, pattern = weight_lbs_regex)) %>%
+  mutate(anchor_type = str_remove(anchor_type, pattern = weight_kg_regex)) %>%
+  mutate(anchor_type = str_squish(anchor_type)) %>%
+  mutate(anchor_type = na_if(anchor_type,"")) %>%
+  # Manage typos and some basic synonyms
+  mutate(anchor_type = str_replace(anchor_type, pattern = "(h pile beam)|(h beam)", replacement = "H beam")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "cemment|concrete", replacement = "cement")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "bock", replacement = "block")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "sections of", replacement = "lengths of")) %>%
+  mutate(anchor_type = str_remove(anchor_type, pattern = "lengths of ")) %>%
+  mutate(anchor_type = str_remove(anchor_type, pattern = "length ")) %>%
+  mutate(anchor_type = str_remove(anchor_type, pattern = "an ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "chain links", replacement = "chains")) %>%
+  # Strip out extra descriptors and qualifiers with debatable meaningfulness
+  mutate(anchor_type = str_remove(anchor_type, pattern = qualifiers_to_strip_regex)) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = " heavy ", replacement = " ")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = " steel rotors", replacement = " rotors")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "steel rock", replacement = "rock")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = " steel chain$", replacement = " chains")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^steel chains$", replacement = "chains")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^steel chain$", replacement = "chains")) %>%
+  # Correct singular vs plural where necessary
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^2 chain$", replacement = "2 chains")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^2 H beam$", replacement = "2 H beams")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^3 chain$", replacement = "3 chains")) %>%
+  mutate(anchor_type = str_replace(anchor_type, pattern = "^chain$", replacement = "chains"))
+  
 sort_unique_vals(logs$anchor_type)
+sort_unique_vals(logs$anchor_weight_kg)
+# TODO: Consider whether to trim decimal places for kg
+
+colnames(logs)
+
+
+# Check length of anchor_type text
 anchor_type_text_len <- unlist(lapply(logs$anchor_type, str_length))
-max(anchor_type_text_len, na.rm=TRUE)
+max(anchor_type_text_len, na.rm = TRUE)
 
 # float_type -------------------------------------------------------------------
 sort_unique_vals(logs$float_type)
-# TODO: investigate "2 big chains plus an anchor", and "Surface"
-# might be in wrong column
+logs <- logs %>%
+  mutate(float_type = tolower(float_type)) %>%
+  # Strip descriptors
+  mutate(float_type = str_remove(float_type, pattern = qualifiers_to_strip_regex)) %>%
+  mutate(float_type = str_remove(float_type, pattern = "small ")) %>%
+  mutate(float_type = str_remove(float_type, pattern = "orange")) %>%
+  mutate(float_type = str_remove(float_type, pattern = "yellow")) %>%
+  # Replace synonyms
+  mutate(float_type = str_replace(float_type, pattern = "float", replacement = "buoy")) %>%
+  mutate(float_type = str_replace(float_type, pattern = "viny ", replacement = "vinyl ")) %>%
+  mutate(float_type = str_replace(float_type, pattern = "viny$", replacement = "vinyl")) %>%
+  # Clean up formatting
+  mutate(float_type = trimws(float_type))
+  
+sort_unique_vals(logs$float_type)
 
 # distance_from_top_of_float_to_origin_first_sensor
 # and distance_from_top_of_float_to_origin_first_sensor_1 ----------------------
+sort_unique_vals(logs$distance_from_top_of_float_to_origin_first_sensor)
 
-# deployment_time -- salmon rivers ---------------------------------------------
-sort_unique_vals(logs$deployment_time)
-# TODO: Potentially group in with time_of_deployment (see log_compiler.R)
+# Drop empty distance_from_top_of_float_to_origin_first_sensor_1
+sort_unique_vals(logs$distance_from_top_of_float_to_origin_first_sensor_1)
+logs <- logs %>% select(!distance_from_top_of_float_to_origin_first_sensor_1)
+colnames(logs)
+
+# deployment_time and time_of_deployment
+# NOTE: the unique values for hms are weird - use distinct instead
+#sort_unique_vals(logs$deployment_time)
+#sort_unique_vals(logs$time_of_deployment)
+logs %>% filter(!is.na(deployment_time)) %>% distinct(location_description, deployment, deployment_time)
+logs %>% filter(!is.na(time_of_deployment)) %>% distinct(location_description, deployment, time_of_deployment)
+
+# Merge time_of_deployment values into deployment_time column
+logs %>% mutate(time_of_deployment = hms(time_of_deployment))
+time_of_deployment_vals <- logs %>% filter(!is.na(time_of_deployment))
+time_of_deployment_nas <- logs %>% filter(is.na(time_of_deployment))
+
+# Check if any columns have more than one deployment time column
+duplicate_depl_time_count <- nrow(logs %>% 
+  filter(as.numeric(!is.na(time_of_deployment)) & 
+           as.numeric(!is.na(deployment_time))) %>%
+  select(
+    location_description,
+    deployment,
+    deployment_time,
+    time_of_deployment
+  ))
+# Since there are no duplicate entries, simply merge the columns
+# Since the duplicate config entry values all match, we can simply take the 
+# first value that is not NA out of all of the columns
+logs <-
+  logs %>% mutate(
+    deployment_time = case_when(
+      !is.na(deployment_time) ~ deployment_time,
+      !is.na(time_of_deployment) ~ time_of_deployment,
+      .default = NA
+    )
+  )
+
+# Check values have been carried over
+logs %>% filter(!is.na(deployment_time)) %>% distinct(location_description, deployment, deployment_time)
+
+# Delete time_of_deployment column
+logs <- logs %>% select(!time_of_deployment)
+
+colnames(logs)
 
 # retrieval_time -- salmon rivers ----------------------------------------------
 sort_unique_vals(logs$retrieval_time)
@@ -799,17 +1038,10 @@ sort_unique_vals(logs$dist_to_shore)
 # substrate -- salmon rivers ---------------------------------------------------
 sort_unique_vals(logs$substrate)
 
-# depth -- depth of what?? -----------------------------------------------------
-# TODO: Check where this comes from?
-sort_unique_vals(logs$depth)
-
-# depth_of_water_m -------------------------------------------------------------
-# TODO: Check which log this comes from - salmon rivers?
-sort_unique_vals(logs$depth_of_water_m)
-
 # secondary_float_type ---------------------------------------------------------
-# TODO: Check which log this is coming from - this matches new log format
 sort_unique_vals(logs$secondary_float_type)
+# Identify log this is coming from
+# logs %>% filter(secondary_float_type == "small 8\" vinyl") %>% distinct(location_description, deployment)
 
 # Generate output --------------------------------------------------------------
 
