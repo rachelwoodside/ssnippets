@@ -92,4 +92,45 @@ ggsave(p1, filename = here("fig_p1.png"), width = w, height = h, dpi = 600)
 ```
 
 
+## Build a dataframe from within a loop
+
+1. Install/load the `purrr` package.
+2. Create an empty list outside of the loop. `new_list <- list()`
+3. Inside the loop, save the new row `new_list[[i]] <- data you want to save`
+4. After the loop, extract data from the list into a dataframe `df <- new_list %>% map_df(rbind)`
+
+```{r}
+#| eval: false
+
+library(purrr)
+library(dplyr)
+
+dat <- iris %>%
+  mutate(Species = as.character(iris$Species))
+
+new_list <- list()
+
+species_list <- unique(dat$Species)
+
+for (i in species_list) {
+  dat_i <- dat %>%
+    filter(Species == i)
+  
+  summary_i <- dat_i %>%
+    summarise(
+      Species = i,
+      n_obs = n(),
+      mean_petal_width = mean(Petal.Width)
+    )
+  
+  new_list[[i]] <- summary_i
+  
+}
+
+df <- new_list %>%
+  map_df(rbind)
+
+df
+
+```
 
