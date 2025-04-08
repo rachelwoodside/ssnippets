@@ -91,5 +91,44 @@ ggsave(p1, filename = here("fig_p1.png"), width = w, height = h, dpi = 600)
 
 ```
 
+## Save Multiple Figures From a List
 
+```{r}
+library(qaqcmar)
+library(purrr)
+
+path <- system.file("testdata", package = "qaqcmar")
+
+dat <- readRDS(paste0(path, "/test_data_grossrange.RDS")) |> 
+  qc_test_grossrange() |>
+  qc_assign_max_flag(qc_tests = "grossrange")
+
+p_qc <- qc_plot_flags(dat, qc_tests = c("grossrange", "qc"), flag_title = FALSE)
+
+p_qc
+```
+
+
+```{r, eval=FALSE}
+# Save DO figures:
+purrr::imap(
+  p_qc$dissolved_oxygen_percent_saturation,
+  ~ggsave(
+    plot = .x,
+    filename = paste0(here(), "/", .y, "_dissolved_oxygen.png"),
+    device = "png",
+    width = 20, height = 10, units = "cm", dpi = 600
+  ))
+
+## Save temperature figures
+purrr::imap(
+  p_qc$dissolved_oxygen_percent_saturation,
+  ~ggsave(
+    plot = .x,
+    filename = paste0(here(), "/", .y, "_temperature.png"),
+    device = "png",
+    width = 20, height = 10, units = "cm", dpi = 600
+  ))
+
+```
 
