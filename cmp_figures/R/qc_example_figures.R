@@ -214,6 +214,60 @@ ggsave(
   dpi = 600
 )
 
+
+
+# climatology - temp 2 ----------------------------------------------------
+
+dat <- readRDS(here("data/shut_in_island.RDS")) %>% 
+  filter(
+    timestamp_utc >= as_datetime("2023-08-01"),
+    sensor_serial_number == 21444909
+  )
+
+p_temp <- qc_plot_flags(dat, qc_tests = "climatology", flag_title = FALSE)
+
+p6 <- p_temp$temperature_degree_c$climatology +
+  annotate(
+    "rect",
+    xmin = as_datetime("2023-09-01"),
+    xmax = as_datetime("2023-10-01"),
+    ymin = -Inf, ymax = 6.72,
+    alpha = 0.25, fill = "#EDA247"
+  ) +
+  annotate(
+    "rect",
+    xmin = as_datetime("2023-09-01"),
+    xmax = as_datetime("2023-10-01"),
+    ymin = 6.72, ymax = Inf,
+    alpha = 0.25, fill = "chartreuse4"
+  ) +
+  geom_point() +
+  scale_y_continuous("Temperature (\u00B0C)") +#, limits = c(2, 26)) +
+  scale_x_datetime(
+    "", 
+    date_labels = "%Y-%m-%d", 
+    breaks = "1 month",
+    date_minor_breaks = "1 month"
+  ) +
+  # guides(
+  #   colour = guide_legend(keyheight = 2, override.aes = list(size = 4))
+  # ) +
+  guides(colour = "none") +
+  theme_legend
+
+p6 +
+  canvas(width_out, height_out, units = "cm")
+
+ggsave(
+  p6,
+  filename = here("figures/2025-01-20_temp_climatology2.png"),
+  device = "png",
+  width = width_out, height = height_out, units = "cm",
+  dpi = 600
+)
+
+
+
 # human in loop - temp ----------------------------------------------------
 
 dat3 <- readRDS(here("data/white_island_2018-10-26.rds")) %>% 
