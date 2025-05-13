@@ -20,8 +20,26 @@ library(qaqcmar)
 
 #Install calval package
 library(devtools)
-install_github("ntorrie/calval", force = TRUE, dependencies = TRUE)
+install_github("dempsy-cmar/calval", force = TRUE, dependencies = TRUE)
 library(calval)
+
+
+#install adcp package
+library(devtools)
+install_github("dempsey-CMAR/adcp", force = TRUE, dependencies = TRUE)
+library(adcp)
+
+
+#install waves package
+library(devtools)
+install_github("dempsey-CMAR/waves", force = TRUE, dependencies = TRUE)
+library(waves)
+
+
+#install summaryplots package
+library(devtools)
+install_github("dempsey-CMAR/summaryplots", force = TRUE, dependencies = TRUE)
+library(summaryplots)
 
 
 #Install strings package (old)
