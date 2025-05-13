@@ -1,0 +1,162 @@
+county,waterbody,station,latitude,longitude
+Annapolis,Annapolis Basin,1042,44.6529,-65.6745
+Annapolis,Annapolis Basin,5005,44.6342,-65.7119
+Annapolis,Annapolis Basin,5006,44.6696,-65.6477
+Annapolis,Annapolis Basin,Cornwallis,44.6694,-65.6448
+Annapolis,Annapolis Basin,Lobster Ledge,44.6782,-65.6833
+Antigonish,Antigonish Harbour,1442,45.6716,-61.8926
+Antigonish,Antigonish Harbour,1443,45.679,-61.8956
+Antigonish,Antigonish Harbour,Southside,45.6598,-61.9042
+Antigonish,Grahams Cove,Antigonish 1,45.6777,-61.9125
+Antigonish,Grahams Cove,Antigonish 2,45.6776,-61.9126
+Antigonish,Grahams Cove,Antigonish 3,45.6776,-61.9128
+Antigonish,Grahams Cove,Captains Pond,45.675,-61.908
+Antigonish,Havre Boucher,Ile du Havre,45.6902,-61.5174
+Antigonish,Monks Head Harbour,Monks Head,45.6549,-61.8288
+Antigonish,St. Georges Bay,St. Georges Bay N,45.708,-61.8565
+Antigonish,St. Georges Bay,St. Georges Bay S,45.6947,-61.8501
+Antigonish,St. Georges Bay,St. Georges Bay W,45.6987,-61.864
+Antigonish,Tracadie Harbour,Tracadie 1,45.6439,-61.6476
+Antigonish,Tracadie Harbour,Tracadie 2,45.644,-61.6478
+Antigonish,Tracadie Harbour,Tracadie 3,45.6442,-61.6479
+Cape Breton,Bras d'Or Lakes,Little Bras d'Or Channel,46.2963,-60.2877
+Cape Breton,Bras d'Or Lakes,St. Andrews Channel E,46.2433,-60.3031
+Colchester,McNabs Bay,McNabs Point 1,45.7628,-63.3514
+Colchester,McNabs Bay,McNabs Point 2,45.7628,-63.3516
+Colchester,McNabs Bay,McNabs Point 3,45.7628,-63.3518
+Colchester,Tatamagouche Bay,Malagash,45.7833,-63.2252
+Digby,St. Marys Bay,1012,44.4071,-66.1605
+Digby,St. Marys Bay,5007,44.5391,-65.958
+Digby,St. Marys Bay,5008,44.5038,-65.9324
+Digby,St. Marys Bay,Centreville 1,44.5328,-65.984
+Digby,St. Marys Bay,Centreville,44.5362,-66.0017
+Digby,St. Marys Bay,Church Point 1,44.324,-66.1357
+Digby,St. Marys Bay,Church Point 2,44.3202,-66.1351
+Digby,St. Marys Bay,Long Beach 1,44.3818,-66.1774
+Digby,St. Marys Bay,Long Beach,44.4017,-66.1596
+Digby,St. Marys Bay,Long Island 1,44.3501,-66.2243
+Digby,St. Marys Bay,Long Island 2,44.3331,-66.2021
+Digby,St. Marys Bay,Mid Bay,44.3868,-66.1442
+Digby,St. Marys Bay,Sandy Cove,44.4857,-66.0596
+Guysborough,Chedabucto Bay,Dorts Cove 1,45.3608,-61.4071
+Guysborough,Chedabucto Bay,Dorts Cove,45.3586,-61.4208
+Guysborough,Chedabucto Bay,Moose Point 1,45.3948,-61.4071
+Guysborough,Chedabucto Bay,Moose Point,45.3993,-61.4199
+Guysborough,Chedabucto Bay,Rook Island 1,45.3523,-61.2869
+Guysborough,Chedabucto Bay,Rook Island,45.351,-61.2679
+Guysborough,Chedabucto Bay,Tickle Island 1,45.3594,-61.0429
+Guysborough,Chedabucto Bay,Tickle Island,45.3549,-61.0379
+Guysborough,Country Harbour,0001,45.1861,-61.7175
+Guysborough,Country Harbour,0622,45.2319,-61.76
+Guysborough,Country Harbour,1307,45.16,-61.6801
+Guysborough,Country Harbour,West Ferry Ramp,45.1742,-61.7083
+Guysborough,Dover Bay,Madeline Point 1,45.2656,-60.9599
+Guysborough,Dover Bay,Madeline Point,45.2675,-60.9792
+Guysborough,Dover Bay,Seal Cove 1,45.2518,-61.0177
+Guysborough,Dover Bay,Seal Cove,45.2585,-60.9998
+Guysborough,Fishermans Harbour,Bull Rock,45.0838,-61.6465
+Guysborough,Fishermans Harbour,Meal Rock,45.1031,-61.6303
+Guysborough,Indian Harbour,Barachois,45.0846,-61.8224
+Guysborough,Marie Joseph Harbour,0028,44.9625,-62.0608
+Guysborough,Marie Joseph Harbour,Barren Island,44.9499,-62.0101
+Guysborough,Marie Joseph Harbour,Jewers Bay,44.9622,-62.0906
+Guysborough,New Harbour,Black Rocks,45.1597,-61.4032
+Guysborough,New Harbour,The Bull,45.1553,-61.3987
+Guysborough,Strait of Canso,Eddy Cove,45.5251,-61.256
+Guysborough,Strait of Canso,Pirate Harbour,45.5893,-61.3794
+Guysborough,Tor Bay,Center Bay,45.2256,-61.2961
+Guysborough,Tor Bay,English Harbour,45.2501,-61.2987
+Guysborough,Tor Bay,Larrys River,45.2077,-61.3532
+Guysborough,Tor Bay,Tanner Island,45.2302,-61.2534
+Guysborough,Whitehead Harbour,1199,45.2736,-61.1289
+Guysborough,Whitehead Harbour,Bald Rock,45.1994,-61.191
+Guysborough,Whitehead Harbour,Burnt Island,45.2564,-61.1492
+Guysborough,Whitehead Harbour,Fishermans Island,45.2405,-61.1683
+Guysborough,Whitehead Harbour,Harbour Island,45.2384,-61.1506
+Guysborough,Whitehead Harbour,Northeast Branch,45.2706,-61.135
+Guysborough,Whitehead Harbour,Northwest Branch,45.2853,-61.1678
+Guysborough,Whitehead Harbour,The Basin,45.2375,-61.1495
+Guysborough,Whitehead Harbour,The Basin N,45.2391,-61.1495
+Guysborough,Whitehead Harbour,The Channel,45.2494,-61.1464
+Guysborough,Whitehead Harbour,White Island,45.247,-61.1567
+Guysborough,Whitehead Harbour,Yankee Cove,45.2332,-61.1589
+Guysborough,Wine Harbour,Wine Harbour,45.0717,-61.8622
+Halifax,Beaver Harbour,Beaver Point,44.8776,-62.3992
+Halifax,Halifax Harbour,Timmonds Cove,44.6234,-63.5211
+Halifax,Lawrencetown Beach,Lawrencetown Beach,44.6343,-63.3372
+Halifax,Owls Head Bay,Owls Head,44.7342,-62.8104
+Halifax,Shad Bay,Shad Bay,44.5012,-63.8141
+Halifax,Sheet Harbour,East Gibbs Island,44.8386,-62.5111
+Halifax,Shoal Bay,Borgles Island,44.7744,-62.7252
+Halifax,Sober Island Pond,1323,44.8452,-62.4663
+Halifax,Sober Island Pond,Sober Island,44.8388,-62.4712
+Halifax,Spry Bay,Spry Harbour,44.8177,-62.6206
+Halifax,St. Margarets Bay,Shut-In Island,44.5545,-63.9567
+Inverness,Bras d'Or Lakes,Denys Basin E,45.904,-60.9949
+Inverness,Bras d'Or Lakes,Denys Basin W,45.901,-61.0287
+Inverness,Denas Pond,0193,46.0072,-60.9885
+Inverness,Mabou Harbour,1330,46.0842,-61.4572
+Inverness,Strait of Canso,Canso Lock,45.6469,-61.4115
+Inverness,Strait of Canso,Pulp Mill,45.5959,-61.3638
+Inverness,Whycocomagh Basin,0814x E,45.9513,-61.1207
+Inverness,Whycocomagh Basin,0814x W,45.9455,-61.1292
+Inverness,Whycocomagh Basin,Deep Basin,45.9482,-61.1246
+Inverness,Whycocomagh Bay,Aberdeen,45.9761,-61.0227
+Lunenburg,Aspotogan Harbour,Saddle Island,44.5033,-64.0499
+Lunenburg,Mahone Bay,Flat Island,44.4335,-64.1312
+Lunenburg,Mahone Bay,Little Rafuse Island,44.4351,-64.2517
+Lunenburg,Mahone Bay,Snake Island,44.5436,-64.1734
+Lunenburg,Mahone Bay,Upper Blandford,44.5089,-64.1329
+Lunenburg,St. Margarets Bay,Birchy Head,44.5713,-64.0351
+Lunenburg,St. Margarets Bay,Tilley Point,44.5483,-64.0174
+Pictou,Caribou Harbour,Waterside,45.7562,-62.7703
+Pictou,Chance Harbour,Inner Harbour,45.6691,-62.5725
+Pictou,French Channel,Robinson Cove,45.66,-62.4117
+Pictou,Little Harbour,Melmerby Beach,45.65,-62.525
+Pictou,Little Harbour,Roy Island 1,45.6604,-62.5148
+Pictou,Little Harbour,Roy Island 2,45.6604,-62.5149
+Pictou,Little Harbour,Roy Island 3,45.6605,-62.5149
+Pictou,Merigomish Harbour,Back Harbour,45.6322,-62.5058
+Pictou,Merigomish Harbour,Olding Island,45.644,-62.468
+Queens,Liverpool Bay,Mersey Point,44.0261,-64.6657
+Queens,Medway River,Fryingpan Island,44.1001,-64.5278
+Queens,Sandy Bay,Lesser Hope Rock,43.7994,-64.879
+Richmond,Arichat Harbour,0667,45.4934,-61.0195
+Richmond,Arichat Harbour,0716 Center,45.5014,-61.042
+Richmond,Arichat Harbour,Cape Auguet Bay,45.5004,-61.0187
+Richmond,Arichat Harbour,Eastern Passage,45.4903,-61.0383
+Richmond,Arichat Harbour,Jerseyman Island,45.4982,-61.0447
+Richmond,Arichat Harbour,Kavanagh Point,45.4982,-61.0193
+Richmond,Bay of Rocks,Les Rochers,45.529,-60.926
+Richmond,Bras d'Or Lakes,St. Peters Canal N,45.6595,-60.8645
+Richmond,Bras d'Or Lakes,St. Peters Canal S,45.6508,-60.8741
+Richmond,Lennox Passage,Cascarette Island,45.6113,-60.9844
+Richmond,Lennox Passage,Gabion Shoal,45.6026,-60.9024
+Richmond,Little Harbour,Red Point,45.5609,-60.7611
+Shelburne,Green Harbour,Blue Island,43.6862,-65.1682
+Shelburne,Little Harbour,Little Harbour,43.7169,-65.0088
+Shelburne,Negro Harbour,Ingomar,43.5237,-65.3557
+Shelburne,Port La Tour,Taylors Rock 1,43.4655,-65.4236
+Shelburne,Port La Tour,Taylors Rock,43.4689,-65.4317
+Shelburne,Shelburne Harbour,McNutts Island,43.6303,-65.261
+Shelburne,Woods Harbour,Camerons Cove,43.4971,-65.7378
+Victoria,Aspy Bay,North Harbour,46.9112,-60.4748
+Victoria,Bras d'Or Lakes,Barra Strait S,45.947,-60.8092
+Victoria,Bras d'Or Lakes,Great Bras d'Or Channel NE-E,46.2514,-60.4645
+Victoria,Bras d'Or Lakes,Great Bras d'Or Channel NE-W,46.2555,-60.4712
+Victoria,Bras d'Or Lakes,Great Bras d'Or Channel SW-E,46.1184,-60.6266
+Victoria,Bras d'Or Lakes,Great Bras d'Or Channel SW-W,46.1206,-60.634
+Victoria,Bras d'Or Lakes,Little Narrows N,45.999,-60.9743
+Victoria,Bras d'Or Lakes,Little Narrows S,45.9864,-60.9903
+Victoria,Bras d'Or Lakes,Nyanza Bay E,46.0652,-60.8948
+Victoria,Bras d'Or Lakes,Nyanza Bay W,46.0648,-60.9024
+Yarmouth,Careys Cove,Yarmouth Bar,43.8315,-66.1732
+Yarmouth,Chebogue Harbour,Big Pond Point,43.7704,-66.1352
+Yarmouth,Lamonts Cove,Short Beach,43.9309,-66.168
+Yarmouth,Lobster Bay,Lobster Bay,43.679,-65.8982
+Yarmouth,Lobster Bay,Morris Island,43.7908,-65.9116
+Yarmouth,Lobster Bay,Old Point Channel,43.721,-65.8457
+Yarmouth,Lobster Bay,Ram Island,43.6845,-65.836
+Yarmouth,Lobster Bay,Tucker Island,43.7161,-65.9427
+Yarmouth,Lobster Bay,Wedgeport,43.694,-65.9594
+Yarmouth,Salt Bay,Big Sluice,43.8144,-65.9137
