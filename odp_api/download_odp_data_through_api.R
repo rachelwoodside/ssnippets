@@ -12,13 +12,17 @@ antigonish_wq_data <- read.socrata(antigonish_wq_api_url)
 cape_breton_wq_api_url <- "https://data.novascotia.ca/resource/5daj-5icy.csv"
 cape_breton_wq_data <- read.socrata(cape_breton_wq_api_url)
 
-# Colchester County 
+# Colchester County
 colchester_wq_api_url <- "https://data.novascotia.ca/resource/gfri-gzxa.csv"
 colchester_wq_data <- read.socrata(colchester_wq_api_url)
 
 # Digby County
 digby_wq_api_url <- "https://data.novascotia.ca/resource/wpsu-7fer.csv"
 digby_wq_data <- read.socrata(digby_wq_api_url)
+
+# Halifax county
+halifax_wq_api_url <- "https://data.novascotia.ca/resource/x9dy-aai9.csv"
+halifax_wq_data <- read.socrata(halifax_wq_api_url)
 
 # Inverness County
 inverness_wq_api_url <- "https://data.novascotia.ca/resource/a9za-3t63.csv"
