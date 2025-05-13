@@ -127,3 +127,19 @@ ggplot(drift_dist, aes(drift_check)) +
 # Look into ---------------------------------------------------------------
 
 dat <- readRDS(here("2024-04-17_station_location_check.rds"))
+
+st_checks <- dat %>% 
+  filter(
+    rad_check == FALSE |
+      drift_check == FALSE |
+      ocean_check == FALSE
+  )
+
+
+rad_check <- dat %>% filter(rad_check == FALSE)
+drift_check <- dat %>% filter(drift_check == FALSE)
+ocean_check <- dat %>% filter(ocean_check == FALSE)
+
+
+
+
