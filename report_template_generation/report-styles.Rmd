@@ -1,0 +1,30 @@
+---
+title: "Untitled"
+output: word_document
+---
+
+# Header 1
+
+Regular text 
+
+## Header 2
+
+Regular text
+
+### Header 3
+
+Table:
+
+```{r, echo=FALSE}
+library(knitr)
+table1 <- data(mtcars)
+
+table1 <- mtcars[1:10, c("mpg",  "hp")]
+
+kable(table1)
+```
+
+#### Header 4
+
+End of document.
+
