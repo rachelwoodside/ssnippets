@@ -1,45 +1,32 @@
 library(RSocrata)
 
-# Annapolis County
+# SODA2 API
 annapolis_wq_api_url <- "https://data.novascotia.ca/resource/knwz-4bap.csv"
 annapolis_wq_data <- read.socrata(annapolis_wq_api_url)
 
-# Antigonish County
-antigonish_wq_api_url <- "https://data.novascotia.ca/resource/kgdu-nqdp.csv"
-antigonish_wq_data <- read.socrata(antigonish_wq_api_url)
+# SODA3 API
+# !!NOTE: to match the SODA3 API, the API endpoint provided by the ODP must be modified
+# For example, the ODP provides the endpoint: "https://data.novascotia.ca/api/v3/views/ktyz-sxuu/query.json"
+# However the "query.json" portion must be removed to be considered a valid URL by the RSocrata package
 
-# Cape Breton County
-cape_breton_wq_api_url <- "https://data.novascotia.ca/resource/5daj-5icy.csv"
-cape_breton_wq_data <- read.socrata(cape_breton_wq_api_url)
+# Public dataset example
+# Pull in app token from config.yml
+odp_api_config <- config::get(config = "default", file = "odp_api/config.yml")
+# Read in dataset from API
+annapolis_wq_api_url <- "https://data.novascotia.ca/api/v3/views/knwz-4bap/"
+annapolis_wq_data <- read.socrata(
+  annapolis_wq_api_url,
+  app_token = odp_api_config$app_token
+)
 
-# Colchester County
-colchester_wq_api_url <- "https://data.novascotia.ca/resource/gfri-gzxa.csv"
-colchester_wq_data <- read.socrata(colchester_wq_api_url)
-
-# Digby County
-digby_wq_api_url <- "https://data.novascotia.ca/resource/wpsu-7fer.csv"
-digby_wq_data <- read.socrata(digby_wq_api_url)
-
-# Halifax county
-halifax_wq_api_url <- "https://data.novascotia.ca/resource/x9dy-aai9.csv"
-halifax_wq_data <- read.socrata(halifax_wq_api_url)
-
-# Inverness County
-inverness_wq_api_url <- "https://data.novascotia.ca/resource/a9za-3t63.csv"
-inverness_wq_data <- read.socrata(inverness_wq_api_url)
-
-# Pictou County
-pictou_wq_api_url <- "https://data.novascotia.ca/resource/adpu-nyt8.csv"
-pictou_wq_data <- read.socrata(pictou_wq_api_url)
-
-# Queens County
-queens_wq_api_url <- "https://data.novascotia.ca/resource/qspp-qhb6.csv"
-queens_wq_data <- read.socrata(queens_wq_api_url)
-
-# Victoria County
-victoria_wq_api_url <- "https://data.novascotia.ca/resource/t2ms-7jgj.csv"
-victoria_wq_data <- read.socrata(victoria_wq_api_url)
-
-# Yarmouth County
-yarmouth_wq_api_url <- "https://data.novascotia.ca/resource/9qw2-yb2f.csv"
-yarmouth_wq_data <- read.socrata(yarmouth_wq_api_url)
+# Private dataset example
+# Pull in login info and app token from config.yml
+odp_api_config <- config::get(config = "default", file = "odp_api/config.yml")
+# Read in dataset from API
+wq_metrics_url <- "https://data.novascotia.ca/api/v3/views/ktyz-sxuu/"
+wq_metrics_data <- read.socrata(
+  wq_metrics_url,
+  app_token = odp_api_config$app_token,
+  email = odp_api_config$email,
+  password = odp_api_config$password
+)
