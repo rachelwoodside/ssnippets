@@ -1,0 +1,4 @@
+default:
+  email: "youremail@perennia.ca"
+  password: "yourpasswordhere"
+  app_token: "apptokenhere"
