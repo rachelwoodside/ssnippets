@@ -51,3 +51,6 @@ rsconnect/
 *html
 *png
 
+# data files
+*csv
+*xlsx
