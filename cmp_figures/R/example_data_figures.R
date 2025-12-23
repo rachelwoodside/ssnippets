@@ -3,27 +3,36 @@ library(dplyr)
 library(ggplot2)
 library(here)
 library(lubridate)
-library(patchwork)
+library(purrr)
 library(qaqcmar)
 library(sensorstrings)
 library(viridis)
-library(wesanderson)
+library(waves)
 
 
 # water quality -----------------------------------------------------------
 
-dat <- readRDS(here("data/shut_in_island.RDS"))
+shut_in_files <- list.files(
+  "R:/data_branches/water_quality/processed_data/qc_data/halifax",
+  pattern = "shut-in_island",
+  full.names = TRUE
+)
+
+dat <- map_df(shut_in_files, readRDS)
 
 dat_temp <- dat %>% 
   filter(qc_flag_temperature_degree_c != 4) %>% 
   select(timestamp_utc, temperature_degree_c,
          sensor_depth_at_low_tide_m, sensor_serial_number, sensor_type)
 
-p1 <- ss_plot_variables(dat_temp)
+p1 <- ss_plot_variables(dat_temp, yaxis_newline = FALSE) 
+
+ss_ggplot_variables(dat_temp, yaxis_newline = FALSE) +
+  theme(text = element_text(size = 11))
 
 ggsave(
   p1,
-  filename = here("figures/2024-04-25_shut-in_island_temperature.png"),
+  filename = here("figures/2025-07_21_shut-in_island_temperature.png"),
   device = "png",
   width = 20, height = 8, units = "cm",
   dpi = 600
@@ -63,47 +72,78 @@ p2 <- ggplot(current, aes(average_speed_cm_s, bin_height_above_sea_floor_m)) +
     legend.position = "none"
   ) 
 
+p2
 ggsave(
   p2,
-  filename = here("figures/2024-04-25_shut-in_island_current_speed_bw.png"),
+  filename = here("figures/2025-07-21_shut-in_island_current_speed_bw.png"),
   device = "png",
-  width = 9, height = 8, units = "cm",
+  width = 9, height = 7, units = "cm",
   dpi = 600
 )
 
 # Waves -------------------------------------------------------------------
 
-wave_raw <- read_csv(here("data/20210728_Halifax_County_Wave_Data.csv"), 
-                    show_col_types = FALSE)
+wave_raw <- readRDS(here("data/2020-07-03_Shut-In_Island_HL008.rds"))
 
 wave <- wave_raw %>% 
-  filter(Waterbody == "St. Margarets Bay") %>% 
-  select(DateTime, Hs, Tp) %>% 
-  mutate(Date = as_datetime(paste0(DateTime, ":00"))) 
+  filter(grossrange_flag_sea_surface_wave_significant_height_m != 4) %>% 
+  rename(significant_height_m = sea_surface_wave_significant_height_m)
 
-p3 <- ggplot(wave, aes(Date, Hs, color = NULL)) +
-  geom_bar(
-    stat = "identity", position ="identity", size = 0.5, fill = "grey30"
-  ) +
-  scale_x_datetime("Date", date_labels = "%Y-%m-%d") +
-  scale_y_continuous(
-    "Wave Height (m)", 
-    limits = c(0, 4), 
-    breaks = seq(0, 4, 1)
-  ) +
+p3 <- wv_plot_ts(wave, var = "significant_height_m", line_width = 0.5) +
+  scale_x_datetime(
+    "Date",
+    breaks = as_datetime(c("2020-07-15", "2020-08-15", "2020-09-15"))
+    ) +
   theme(
     legend.position = "none",
     text = element_text(size = 11),
     #  panel.border = element_rect(color = "black", fill = NA)
   )
 
+p3
+
 ggsave(
   p3,
-  filename = here("figures/shut-in_island_waves_bw.png"),
+  filename = here("figures/2025-07-21_shut-in_island_waves.png"),
   device = "png",
-  width = 9, height = 8, units = "cm",
+  width = 9, height = 7, units = "cm",
   dpi = 600
 )
+
+
+
+
+# wave_raw <- read_csv(here("data/20210728_Halifax_County_Wave_Data.csv"), 
+#                     show_col_types = FALSE)
+# 
+# wave <- wave_raw %>% 
+#   filter(Waterbody == "St. Margarets Bay") %>% 
+#   select(DateTime, Hs, Tp) %>% 
+#   mutate(Date = as_datetime(paste0(DateTime, ":00"))) 
+# 
+# p3 <- ggplot(wave, aes(Date, Hs, color = NULL)) +
+#   geom_bar(
+#     stat = "identity", position ="identity", size = 0.5, fill = "grey30"
+#   ) +
+#   scale_x_datetime("Date", date_labels = "%Y-%m-%d") +
+#   scale_y_continuous(
+#     "Wave Height (m)", 
+#     limits = c(0, 4), 
+#     breaks = seq(0, 4, 1)
+#   ) +
+#   theme(
+#     legend.position = "none",
+#     text = element_text(size = 11),
+#     #  panel.border = element_rect(color = "black", fill = NA)
+#   )
+# 
+# ggsave(
+#   p3,
+#   filename = here("figures/shut-in_island_waves_bw.png"),
+#   device = "png",
+#   width = 9, height = 8, units = "cm",
+#   dpi = 600
+# )
 
 
 # combine -----------------------------------------------------------------

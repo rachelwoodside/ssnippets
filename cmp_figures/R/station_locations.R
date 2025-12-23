@@ -11,7 +11,7 @@ library(dplyr)
 library(ggplot2)
 #library(ggspatial)
 
-# creates nuce basemap of NS and surrounding land 
+# creates nice basemap of NS and surrounding land 
 # (must have rnaturalearth and ggplot2 loaded)
 source(here("functions/ns_base_map.R"))
 
@@ -20,7 +20,7 @@ theme_set(theme_light())
 # station locations -------------------------------------------------------
 
 strings_raw <- read_csv(
-  here("data/2024-03-14_station_locations.csv"),
+  here("data/2024-12-06_station_locations.csv"),
   show_col_types = FALSE) %>%
   mutate(variable = "Water Quality"
   ) %>%
@@ -66,13 +66,37 @@ ggsave(
   dpi = 600
 )
 
+# All Stations: Slide Background --------------------------------------------------
+#x_min = -67, x_max = -59, y_min = 43.3, y_max = 47.2
+#x_min = -69, x_max = -57, y_min = 43.25, y_max = 47
+ns_base_map() +
+  geom_sf(
+    data = stations, aes(fill = variable),
+    pch = 21, size = 3.5
+  ) +
+  scale_fill_manual("", values = brewer.pal(3, "Dark2")) +
+  guides(fill = guide_legend(keyheight = 1.75)) +
+  theme(
+    legend.position = "none"
+    # legend.title = element_blank(),
+    # legend.box.background = element_rect(color = "grey20"),
+    # legend.text = element_text(size = 16)
+  )
+
+ggsave(
+  filename = here("figures/2025-09-24_station_locations_full.png"),
+  device = "png",
+  width = 33.87, height = 19.05, units = "cm",
+  dpi = 600
+)
+
 
 # All Stations: Word Doc --------------------------------------------------
 
 ns_base_map(x_min = -67, x_max = -59, y_min = 43.3, y_max = 47.2) +
   geom_sf(
     data = stations, aes(fill = variable),
-    pch = 21, size = 3.5, alpha = 1
+    pch = 21, size = 3.5
   ) +
   scale_fill_manual("", values = brewer.pal(3, "Dark2")) +
   guides(fill = guide_legend(keyheight = 1.75)) +
@@ -80,13 +104,20 @@ ns_base_map(x_min = -67, x_max = -59, y_min = 43.3, y_max = 47.2) +
     legend.position = c(0.8, 0.2),
     legend.title = element_blank(),
     legend.box.background = element_rect(color = "grey20"),
-    legend.text = element_text(size = 12)
+    legend.text = element_text(size = 16)
   )
 
 ggsave(
-  filename = here("figures/2024-04-25_station_locations_word.png"),
+  filename = here("figures/2025-09-24_station_locations_word.png"),
   device = "png",
   width = 20, height = 15, units = "cm",
+  dpi = 600
+)
+
+ggsave(
+  filename = here("figures/2025-09-24_station_locations_word.png"),
+  device = "png",
+  width = 18, height = 17, units = "cm",
   dpi = 600
 )
 
@@ -98,7 +129,7 @@ ns_base_map(
   ) +
   geom_sf(
     data = stations, aes(fill = variable),
-    pch = 21, size = 2, alpha = 1
+    pch = 21, size = 2, alpha = 0.75
   ) +
   scale_fill_manual("", values = brewer.pal(3, "Dark2")) +
  # guides(fill = guide_legend(keyheight = 0.75)) +
@@ -110,7 +141,7 @@ ns_base_map(
   )
 
 ggsave(
-  filename = here("figures/2024-04-25_station_locations_word_small.png"),
+  filename = here("figures/2025-07-21_station_locations_word_small.png"),
   device = "png",
   width = 11, height = 9, units = "cm",
   dpi = 600
