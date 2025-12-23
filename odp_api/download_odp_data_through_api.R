@@ -1,3 +1,8 @@
+# RSocrata package removed from CRAN 
+# "Archived on 2025-04-16 as issues were not corrected in time."
+library(devtools)
+install_github("Chicago/RSocrata")
+
 library(RSocrata)
 
 # SODA2 API
