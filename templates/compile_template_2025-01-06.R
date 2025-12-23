@@ -30,9 +30,7 @@
 
 
 library(dplyr)
-library(leaflet)
 library(lubridate)
-library(quarto)
 library(sensorstrings)
 
 # SECTION 1: **Generate File Path** -------------------------------------------------------------
@@ -64,21 +62,12 @@ st_location <- data.frame(
   longitude = unique(dat_raw$longitude)
 )
 
+ss_leaflet_station_map(st_location)
+
 ss_check_station_radius(st_location)
 ss_check_station_in_ocean(st_location) # slow because reads in shape file
 # ss_check_station_drift(st_location) # need retrieval coords
 
-leaflet(st_location) %>%
-  addProviderTiles(providers$CartoDB.Positron) %>%
-  addCircleMarkers(
-    data = st_location,
-    lng = ~longitude, lat = ~latitude, label = ~station,
-    weight = 1, fillOpacity = 0.75, radius = 5
-  ) %>%
-  addScaleBar(
-    position = "bottomleft",
-    options = scaleBarOptions(imperial = FALSE)
-  )
 
 # SECTION 4: Identify Trim Dates --------------------------------------------------------------
 # if the app viewer is blank, click "Open in Browser"
